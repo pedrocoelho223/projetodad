@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7baed37c5e6f21b741f02323c7ede3f6",
+    "content-hash": "12fa15368e6b4066cd153fe25d83ca64",
     "packages": [
         {
             "name": "brick/math",
@@ -6468,7 +6468,7 @@
             },
             "autoload": {
                 "psr-4": {
-                    "Jean85\\": "src/"
+                    "Laravel\\Breeze\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
