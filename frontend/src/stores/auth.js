@@ -1,76 +1,46 @@
-import { defineStore } from 'pinia';
-import axios from 'axios';
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { useAPIStore } from './api'
+import { useSocketStore } from './socket'
 
-export const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api' // /api incluído se o backend tiver prefixo
-});
+export const useAuthStore = defineStore('auth', () => {
+  const apiStore = useAPIStore()
+  const socketStore = useSocketStore()
 
+  const currentUser = ref(undefined)
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null,
-    token: null,
-    loading: false,
-    error: null
-  }),
-  actions: {
-    async register(payload) {
-      this.loading = true;
-      this.error = null;
-      try {
-        const res = await api.post('/register', payload);
-        this.user = res.data.user;
-        this.token = res.data.token || null;
-        return res.data;
-      } catch (err) {
-        this.error = err.response?.data?.message || err.message;
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
+  const isLoggedIn = computed(() => {
+    return currentUser.value !== undefined
+  })
 
-    async login(payload) {
-      this.loading = true;
-      this.error = null;
-      try {
-        const res = await api.post('/login', payload);
-        this.user = res.data.user;
-        this.token = res.data.token;
-        return res.data;
-      } catch (err) {
-        this.error = err.response?.data?.message || err.message;
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
+  const currentUserID = computed(() => {
+    return currentUser.value?.id
+  })
 
-    logout() {
-      this.user = null;
-      this.token = null;
-    },
-
-    async deleteUser() {
-      if (!this.token) {
-        this.error = 'Não autenticado';
-        return;
-      }
-      this.loading = true;
-      this.error = null;
-      try {
-        await api.delete('/user', {
-          headers: { Authorization: `Bearer ${this.token}` }
-        });
-        this.logout();
-      } catch (err) {
-        this.error = err.response?.data?.message || err.message;
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    }
+  const login = async (credentials) => {
+    await apiStore.postLogin(credentials)
+    await getUser()
+    socketStore.emitJoin(currentUser.value)
+    return currentUser.value
   }
-});
 
+  const logout = async () => {
+    await apiStore.postLogout()
+    socketStore.emitLeave()
+    currentUser.value = undefined
+  }
 
+  const getUser = async () => {
+    const response = await apiStore.getAuthUser()
+    currentUser.value = response.data
+  }
+
+  return {
+    currentUser,
+    currentUserID,
+    isLoggedIn,
+    login,
+    logout,
+    getUser,
+  }
+})
