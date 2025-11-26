@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreGameRequest;
-use App\Http\Resources\GameResource;
 
 class GameController extends Controller
 {
@@ -14,56 +12,69 @@ class GameController extends Controller
      */
     public function index(Request $request)
     {
-        $games = Game::with(['player1', 'winner'])
-            ->orderBy('created_at', 'desc')
-            ->get(); // ou ->paginate()
+        $query = Game::query()->with(['winner']);
 
-        return response()->json(['data' => $games]);
+        if ($request->has('type') && in_array($request->type, ['3', '9'])) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->has('status') && in_array($request->status, ['Pending', 'Playing', 'Ended', 'Interrupted'])) {
+            $query->where('status', $request->status);
+        }
+
+        // Sorting
+        $sortField = $request->input('sort_by', 'began_at');
+        $sortDirection = $request->input('sort_direction', 'desc');
+
+        $allowedSortFields = [
+            'began_at',
+            'ended_at',
+            'total_time',
+            'type',
+            'status'
+        ];
+
+        if (in_array($sortField, $allowedSortFields)) {
+            $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
+        }
+
+        // Pagination
+        $perPage = $request->input('per_page', 15);
+        $games = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $games->items(),
+            'meta' => [
+                'current_page' => $games->currentPage(),
+                'last_page' => $games->lastPage(),
+                'per_page' => $games->perPage(),
+                'total' => $games->total()
+            ]
+        ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreGameRequest $request)
-{
-    $validated = $request->validated();
-    $user = $request->user(); // Pega no utilizador autenticado
+    public function store(Request $request)
+    {
+        //
+    }
 
-    $game = new Game();
-
-    // --- CORREÇÃO AQUI ---
-    // Preencher TODOS os campos de identificação
-   // $game->created_by = $user->id;
-    $game->player1_id = $user->id; // CRÍTICO: Isto faz aparecer o nome no histórico
-    $game->winner_id = $user->id;  // Num single player acabado, o player ganha
-    // ---------------------
-
-    $game->type = 'S';
-    $game->status = 'ended';
-
-    $game->total_time = $validated['total_time'] ?? 0;
-    $game->total_moves_played = $validated['total_moves_played'];
-    $game->player1_moves = $validated['total_moves_played']; // Boa prática preencher este também
-
-    $game->save();
-
-    return new GameResource($game);
-}
     /**
      * Display the specified resource.
      */
     public function show(Game $game)
     {
-        return new GameResource($game);
+        //
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreGameRequest $request, Game $game)
+    public function update(Request $request, Game $game)
     {
-        $game->update($request->validated());
-        return new GameResource($game);
+        //
     }
 
     /**

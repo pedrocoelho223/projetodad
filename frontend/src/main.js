@@ -1,21 +1,21 @@
 import { createApp } from 'vue'
-import { io } from 'socket.io-client'
 import { createPinia } from 'pinia'
+import { io } from 'socket.io-client'
 
 import App from './App.vue'
-
 import router from './router'
 
+const apiDomain = import.meta.env.VITE_API_DOMAIN
+const wsConnection = import.meta.env.VITE_WS_CONNECTION
 
-const API_BASE_URL = 'http://localhost:8000/api'
-const SERVER_BASE_URL = 'http://localhost:8000'
+console.log('[main.js] api domain', apiDomain)
+console.log('[main.js] ws connection', wsConnection)
 
 const app = createApp(App)
 
-const socket = io('http://localhost:3000')
-app.provide('socket', socket)
-app.provide('apiBaseURL', API_BASE_URL)
-app.provide('serverBaseURL', SERVER_BASE_URL)
+app.provide('socket', io(wsConnection))
+app.provide('serverBaseURL', `http://${apiDomain}`)
+app.provide('apiBaseURL', `http://${apiDomain}/api`)
 
 app.use(createPinia())
 app.use(router)

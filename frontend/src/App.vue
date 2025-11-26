@@ -2,97 +2,56 @@
   <Toaster richColors />
   <nav class="max-w-full p-5 flex flex-row justify-between align-middle">
     <div class="align-middle text-xl">
-      <RouterLink to="/"> 🧠 Memory Game </RouterLink>
+      <RouterLink to="/"> {{ pageTitle }} </RouterLink>
       <span class="text-xs" v-if="authStore.currentUser">&nbsp;&nbsp;&nbsp;
-            ({{ authStore.currentUser?.name }})
+        ({{ authStore.currentUser?.name }})
       </span>
     </div>
-    <NavigationMenu>
-      <NavigationMenuList class="justify-around gap-20">
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Games</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <li>
-              <NavigationMenuLink as-child>
-                <RouterLink to="/games/singleplayer">SinglePlayer</RouterLink>
-              </NavigationMenuLink>
-              <NavigationMenuLink as-child>
-                <RouterLink to="/games/lobby">MultiPlayer</RouterLink>
-              </NavigationMenuLink>
-            </li>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink>
-            <RouterLink to="/about">About</RouterLink>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem v-if="!authStore.isLoggedIn">
-          <NavigationMenuLink>
-            <RouterLink to="/login">Login</RouterLink>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem v-else>
-          <NavigationMenuTrigger>Account</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <li>
-              <NavigationMenuLink as-child>
-                <RouterLink to="/profile">Profile</RouterLink>
-              </NavigationMenuLink>
-              <NavigationMenuLink as-child>
-                <RouterLink to="/themes">My Themes</RouterLink>
-              </NavigationMenuLink>
-              <NavigationMenuLink as-child>
-                <a @click.prevent="logout" class="cursor-pointer">Logout</a>
-              </NavigationMenuLink>
-            </li>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-      </NavigationMenuList>
-    </NavigationMenu>
+    <NavBar @logout="logout" :userLoggedIn="authStore.isLoggedIn" />
   </nav>
   <div>
-    <main>
+    <main class="container m-auto">
       <RouterView />
     </main>
   </div>
 </template>
 
 <script setup>
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu'
-import { Toaster } from '@/components/ui/sonner'
-import { toast } from 'vue-sonner'
+import { RouterLink, RouterView } from 'vue-router';
+import { toast } from 'vue-sonner';
 import 'vue-sonner/style.css'
-import { RouterLink, RouterView } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useSocketStore } from '@/stores/socket'
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue';
+import { Toaster } from '@/components/ui/sonner'
+import NavBar from './components/layout/NavBar.vue';
+import { useAuthStore } from './stores/auth';
+import { useSocketStore } from './stores/socket';
 
 const authStore = useAuthStore()
 const socketStore = useSocketStore()
 
+
+const year = new Date().getFullYear()
+const pageTitle = ref(`DAD ${year}/${String(year + 1).slice(-2)}`)
+
+
+
 const logout = () => {
+
   toast.promise(authStore.logout(), {
     loading: 'Calling API',
     success: () => {
       return 'Logout Sucessfull '
     },
-    error: (data) => `[API] Error logging out - ${data?.response?.data?.message}`,
+    error: (data) => `[API] Error saving game - ${data?.response?.data?.message}`,
   })
 
 }
 
 onMounted(() => {
   socketStore.handleConnection()
-  socketStore.handleGameEvents()
 })
+
+
 </script>
 
-<style></style>
+<style></style>`

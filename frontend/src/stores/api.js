@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { toast } from 'vue-sonner'
 import axios from 'axios'
 import { inject, ref } from 'vue'
 
@@ -7,6 +6,15 @@ export const useAPIStore = defineStore('api', () => {
   const API_BASE_URL = inject('apiBaseURL')
 
   const token = ref()
+  const gameQueryParameters = ref({
+    page: 1,
+    filters: {
+      type: '',
+      status: '',
+      sort_by: 'began_at',
+      sort_direction: 'desc',
+    },
+  })
 
   // AUTH
   const postLogin = async (credentials) => {
@@ -25,101 +33,31 @@ export const useAPIStore = defineStore('api', () => {
     return axios.get(`${API_BASE_URL}/users/me`)
   }
 
-  const putUser = (user) => {
-    return axios.put(`${API_BASE_URL}/users/${user.id}`, user)
-  }
-
-  const patchUserPhoto = (id, photo_url) => {
-    return axios.patch(`${API_BASE_URL}/users/${id}/photo-url`, { photo_url })
-  }
-
-  // GAMES
-  const postGame = (game) => {
-    return toast.promise(axios.post(`${API_BASE_URL}/games`, game), {
-      loading: 'Sending data to API...',
-      success: () => {
-        return `[API] Game saved successfully`
-      },
-      error: (data) => `[API] Error saving game - ${data?.response?.data?.message}`,
-    })
-  }
-
-  const getGames = () => {
-    return axios.get(`${API_BASE_URL}/games`)
-  }
-
-  // Board Themes
-
-  const getBoardThemes = async () => {
-    return axios.get(`${API_BASE_URL}/board-themes`)
-  }
-
-  const postBoardTheme = async (data) => {
-    return axios.post(`${API_BASE_URL}/board-themes`, data)
-  }
-
-  const postCardFace = async (data) => {
-    return axios.post(`${API_BASE_URL}/card-faces`, data)
-  }
-
-  const deleteBoardTheme = async (id) => {
-    return axios.delete(`${API_BASE_URL}/board-themes/${id}`)
-  }
-
-
-  // Files
-
-  const uploadProfilePhoto = async (file) => {
-    const formData = new FormData()
-    formData.append('photo', file)
-
-    const uploadPromise = axios.post(`${API_BASE_URL}/files/userphoto`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-
-    toast.promise(uploadPromise, {
-      loading: 'Uploading profile photo...',
-      success: () => `Profile photo uploaded successfully`,
-      error: (data) => `Error uploading photo - ${data?.response?.data?.message}`,
-    })
-
-    return uploadPromise
-  }
-
-  const uploadCardFaces = async (files) => {
-    const formData = new FormData()
-    for (let file of files) {
-      formData.append('cardfaces[]', file)
+  //Games
+  const getGames = (resetPagination = false) => {
+    if (resetPagination) {
+      gameQueryParameters.value.page = 1
     }
 
-    const uploadPromise = axios.post(`${API_BASE_URL}/files/cardfaces`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-
-    toast.promise(uploadPromise, {
-      loading: 'Uploading Card Faces...',
-      success: () => `Card Faces uploaded successfully`,
-      error: (data) => `Error uploading Card Faces - ${data?.response?.data?.message}`,
-    })
-
-    return uploadPromise
+    const queryParams = new URLSearchParams({
+      page: gameQueryParameters.value.page,
+      ...(gameQueryParameters.value.filters.type && {
+        type: gameQueryParameters.value.filters.type,
+      }),
+      ...(gameQueryParameters.value.filters.status && {
+        status: gameQueryParameters.value.filters.status,
+      }),
+      sort_by: gameQueryParameters.value.filters.sort_by,
+      sort_direction: gameQueryParameters.value.filters.sort_direction,
+    }).toString()
+    return axios.get(`${API_BASE_URL}/games?${queryParams}`)
   }
-
-
 
   return {
     postLogin,
     postLogout,
     getAuthUser,
-    putUser,
-    patchUserPhoto,
-    postGame,
     getGames,
-    getBoardThemes,
-    postBoardTheme,
-    postCardFace,
-    uploadProfilePhoto,
-    uploadCardFaces,
-    deleteBoardTheme,
+    gameQueryParameters,
   }
 })

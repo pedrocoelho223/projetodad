@@ -58,19 +58,21 @@ const authStore = useAuthStore()
 const router = useRouter()
 
 const formData = ref({
-    email: 'test@example.com',
-    password: 'password'
+    email: 'pa@mail.pt',
+    password: '123'
 })
 
 
 const handleSubmit = async () => {
+
     toast.promise(authStore.login(formData.value), {
         loading: 'Calling API',
         success: (data) => {
             return `Login Sucessfull - ${data?.name}`
         },
-        error: (data) => `[API] Error logging in - ${data?.response?.data?.message}`,
+        error: (data) => `[API] Error saving game - ${data?.response?.data?.message}`,
     })
+
 
     router.push('/')
 }
