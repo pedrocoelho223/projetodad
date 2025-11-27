@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,7 +16,33 @@ spec:
       priorityClassName: high-priority
       containers:
         - name: api
-          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v2.0.0
+          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.0
+          ports:
+            - containerPort: 80
+          env:
+            - name: APP_KEY
+              value: "base64:sYWgAnhEAQpQ++JtCEyAUgwFfJTWVsotjs0FHtgN7h0=" 
+            - name: APP_URL
+              value: "http://api-dad-group-5-172.22.21.253.sslip.io"
+            - name: DB_CONNECTION
+              value: mysql
+            - name: DB_HOST
+              value: mysql 
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: memory_game 
+            - name: DB_USERNAME
+              value: root
+            - name: DB_PASSWORD
+              value: "root" 
+            
+            
+            - name: SANCTUM_STATEFUL_DOMAINS
+              value: "web-dad-group-5-172.22.21.253.sslip.io"
+            - name: SESSION_DOMAIN
+              value: ".172.22.21.253.sslip.io"
+
           resources:
             requests:
               memory: "256Mi"
@@ -30,10 +55,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: laravel-app
+  name: api  
   namespace: dad-group-5
 spec:
   ports:
-    - port: 80
+    - port: 8000        
+      targetPort: 80
   selector:
     app: laravel-app

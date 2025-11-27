@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,7 +16,9 @@ spec:
       priorityClassName: low-priority
       containers:
         - name: web
-          image: registry-172.22.21.115.sslip.io/dad-group-5/ws:v2.0.1
+          image: registry-172.22.21.115.sslip.io/dad-group-5/ws:v2.0.2
+          ports:
+            - containerPort: 3000
           resources:
             requests:
               memory: "128Mi"
@@ -35,5 +36,6 @@ metadata:
 spec:
   ports:
     - port: 3000
+      targetPort: 3000
   selector:
     app: websocket-server
