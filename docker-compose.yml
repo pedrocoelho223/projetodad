@@ -20,7 +20,7 @@ services:
     container_name: memory_game_api
     restart: unless-stopped
     ports:
-      - "8000:8000"       
+      - "8000:80"    
     environment:
       DB_CONNECTION: mysql
       DB_HOST: mysql

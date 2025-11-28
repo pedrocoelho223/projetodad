@@ -11,47 +11,53 @@ class GameController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $query = Game::query()->with(['winner']);
+{
+    // 1. CORREÇÃO: Carregar logo todas as relações (players e winner)
+    // Isto permite ao Frontend mostrar "Agustina Hintz" em vez do ID 29
+    $query = Game::with(['player1', 'player2', 'winner']);
 
-        if ($request->has('type') && in_array($request->type, ['3', '9'])) {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->has('status') && in_array($request->status, ['Pending', 'Playing', 'Ended', 'Interrupted'])) {
-            $query->where('status', $request->status);
-        }
-
-        // Sorting
-        $sortField = $request->input('sort_by', 'began_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
-
-        $allowedSortFields = [
-            'began_at',
-            'ended_at',
-            'total_time',
-            'type',
-            'status'
-        ];
-
-        if (in_array($sortField, $allowedSortFields)) {
-            $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
-        }
-
-        // Pagination
-        $perPage = $request->input('per_page', 15);
-        $games = $query->paginate($perPage);
-
-        return response()->json([
-            'data' => $games->items(),
-            'meta' => [
-                'current_page' => $games->currentPage(),
-                'last_page' => $games->lastPage(),
-                'per_page' => $games->perPage(),
-                'total' => $games->total()
-            ]
-        ]);
+    // Filtros
+    if ($request->has('type') && in_array($request->type, ['3', '9'])) {
+        $query->where('type', $request->type);
     }
+
+    if ($request->has('status') && in_array($request->status, ['Pending', 'Playing', 'Ended', 'Interrupted'])) {
+        $query->where('status', $request->status);
+    }
+
+    // Sorting
+    $sortField = $request->input('sort_by', 'began_at');
+    $sortDirection = $request->input('sort_direction', 'desc');
+
+    $allowedSortFields = [
+        'id',          // Adicionei ID
+        'began_at',
+        'created_at',  // Adicionei created_at para prevenir erros
+        'ended_at',
+        'total_time',
+        'type',
+        'status'
+    ];
+
+    if (in_array($sortField, $allowedSortFields)) {
+        $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
+    }
+
+    // Pagination
+    $perPage = $request->input('per_page', 15);
+    $games = $query->paginate($perPage);
+
+    // Retorno JSON formatado para o Vue
+    return response()->json([
+        'data' => $games->items(),
+        'meta' => [
+            'current_page' => $games->currentPage(),
+            'last_page' => $games->lastPage(),
+            'per_page' => $games->perPage(),
+            'total' => $games->total()
+        ]
+    ]);
+}
 
     /**
      * Store a newly created resource in storage.
