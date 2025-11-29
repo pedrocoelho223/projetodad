@@ -16,21 +16,25 @@ spec:
       containers:
         - name: mysql
           image: mysql:8.0
+          #Teste para poupar memoria
+          args:
+            - "--default-authentication-plugin=mysql_native_password"
+            - "--performance-schema=0"
+            - "--innodb-buffer-pool-size=64M"
           env:
-            # MUDANÇA CRÍTICA: Definir a password explicitamente para 'root'
             - name: MYSQL_ROOT_PASSWORD
               value: "root"
             - name: MYSQL_DATABASE
-              value: "project"
+              value: "memory_game" # Mudei de project para memory_game
           ports:
             - containerPort: 3306
           resources:
             requests:
-              memory: "384Mi"
-              cpu: "200m"
+              memory: "128Mi"   # Era 384Mi
+              cpu: "100m"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "256Mi"   # Era 1Gi (Muito alto!)
+              cpu: "300m"
 
 ---
 apiVersion: v1

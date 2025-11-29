@@ -16,15 +16,15 @@ spec:
       priorityClassName: low-priority
       containers:
         - name: web
-          image: registry-172.22.21.115.sslip.io/dad-group-5/web:v2.0.0
+          image: registry-172.22.21.115.sslip.io/dad-group-5/web:v2.0.14
           ports:
             - containerPort: 80
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: "32Mi"
+              cpu: "10m"
             limits:
-              memory: "128Mi"
+              memory: "64Mi"
               cpu: "100m"
 
 ---

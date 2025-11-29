@@ -4,9 +4,9 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'http://web-dad-group-5-172.22.21.253.sslip.io',
-        'http://localhost:5173', // O teu Frontend Dev
-        'http://localhost:8000', // A tua API direta
-        'http://localhost',      // O teu Frontend Final (Docker)
+        //'http://localhost:5173', // localhost frontend dev
+        //'http://localhost:8000', // A tua API direta
+        //'http://localhost',      // O teu Frontend Final (Docker)
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
