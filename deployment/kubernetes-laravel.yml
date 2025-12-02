@@ -16,7 +16,7 @@ spec:
       priorityClassName: high-priority
       containers:
         - name: api
-          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.1
+          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.2
           ports:
             - containerPort: 80
           env:
@@ -39,7 +39,7 @@ spec:
             
             
             - name: SANCTUM_STATEFUL_DOMAINS
-              value: "web-dad-group-5-172.22.21.253.sslip.io"
+              value: "web-dad-group-5-172.22.21.253.sslip.io, localhost:5173"
             - name: SESSION_DOMAIN
               value: ".172.22.21.253.sslip.io"
 
