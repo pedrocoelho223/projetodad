@@ -36,9 +36,9 @@
 
                 <div class="text-center text-sm">
                     <span class="text-gray-600">Don't have an account? </span>
-                    <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                    <router-link :to="{ name: 'Register' }" class="font-medium text-blue-600 hover:text-blue-500">
                         Sign up
-                    </a>
+                    </router-link>
                 </div>
             </form>
         </div>

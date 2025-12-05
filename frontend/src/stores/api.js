@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 export const useAPIStore = defineStore('api', () => {
   //const API_BASE_URL = inject('apiBaseURL')
-const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+  const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
   const token = ref(localStorage.getItem('token')) // Tenta recuperar do storage
 
   // Configuração inicial do axios se o token existir
@@ -12,7 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
   }
 
-  const gameQueryParameters = ref({
+  /*const gameQueryParameters = ref({
     page: 1,
     filters: {
       type: '',
@@ -22,9 +22,11 @@ const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
     },
   })
 
+  Movido para baixo*/
+
   // AUTH
   const postLogin = async (credentials) => {
-    const response = await axios.post(`${API_BASE_URL}/login`, credentials)
+    const response = await axios.post(`${API_BASE_URL}/login`, credentials) // Faz o login
 
     // O código só continua aqui se o login for sucesso
     token.value = response.data.access_token || response.data.token
@@ -34,11 +36,23 @@ const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
     return response
   }
 
+  //[Novo] Registo
+  const postRegister = async (formData) => {
+    // Nota: Como enviamos ficheiros, o axios deteta FormData e ajusta os headers sozinho
+    const response = await axios.post(`${API_BASE_URL}/register`, formData)
+
+    // Configurar sessão automaticamente após registo
+    token.value = response.data.access_token || response.data.token
+    localStorage.setItem('token', token.value)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+
+    return response
+  }
+
+  // Logout
   const postLogout = async () => {
     try {
       await axios.post(`${API_BASE_URL}/logout`)
-    } catch {
-      // Ignora erro no logout
     } finally {
       token.value = null
       localStorage.removeItem('token')
@@ -51,7 +65,20 @@ const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
     return axios.get(`${API_BASE_URL}/users/me`)
   }
 
+  //[Novo] Atualizar Perfil
+  const postUpdateUser = (formData) => {
+    // Laravel tem problemas com PUT e ficheiros. Usamos POST com _method: PUT
+    formData.append('_method', 'PUT')
+    return axios.post(`${API_BASE_URL}/users/me`, formData)
+  }
+
+  // [NOVO] Apagar Conta
+  const deleteUser = (password) => {
+    return axios.delete(`${API_BASE_URL}/users/me`, { data: { password } })
+  }
+
   // --- GAMES ---
+  const gameQueryParameters = ref({ page: 1, filters: {} })
 
   // 1. Listar Jogos (GET)
   const getGames = (resetPagination = false) => {
@@ -80,12 +107,15 @@ const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
   }
 
   return {
+    token,
     postLogin,
+    postRegister,
     postLogout,
     getAuthUser,
+    postUpdateUser,
+    deleteUser,
     getGames,
     postGame,
     gameQueryParameters,
-    token
   }
 })

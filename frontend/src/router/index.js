@@ -5,6 +5,9 @@ import WebsocketsPage from '@/pages/testing/WebsocketsPage.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+import Register from '@/components/auth/RegisterUser.vue'
+import Profile from '@/components/users/ProfileUser.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -18,6 +21,22 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginPage,
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: Register,
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile,
+      // Proteção: só deixa entrar se estiver logado
+      beforeEnter: (to, from, next) => {
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn) next({ name: 'login' })
+        else next()
+      },
     },
     {
       path: '/testing',

@@ -14,7 +14,11 @@ class GameController extends Controller
 {
     // 1. CORREÇÃO: Carregar logo todas as relações (players e winner)
     // Isto permite ao Frontend mostrar "Agustina Hintz" em vez do ID 29
-    $query = Game::with(['player1', 'player2', 'winner']);
+    $query = Game::with([
+    'player1' => function($query) { $query->withTrashed(); },
+    'player2' => function($query) { $query->withTrashed(); },
+    'winner'  => function($query) { $query->withTrashed(); }
+]);
 
     // Filtros
     if ($request->has('type') && in_array($request->type, ['3', '9'])) {
