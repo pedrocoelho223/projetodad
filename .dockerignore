@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+.env.local
+bun.lockb
+
+# Ignorar as outras pastas do projeto para não pesar na imagem do websocket
+frontend
+api

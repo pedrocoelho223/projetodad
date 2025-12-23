@@ -23,14 +23,8 @@ export const useAuthStore = defineStore('auth', () => {
   const userPhotoUrl = computed(() => {
     if (!currentUser.value?.photo_avatar_filename) return null
 
-    // 1. Vai buscar o domínio (ex: http://.../api)
-    let baseUrl = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
-
-    // 2. Remove o sufixo "/api" se ele existir
-    baseUrl = baseUrl.replace(/\/api$/, '')
-
-    // 3. Retorna o URL limpo apontando para a pasta storage
-    return `${baseUrl}/storage/${currentUser.value.photo_avatar_filename}`
+    // Forçar também aqui o porto 8000
+    return `http://localhost:8000/storage/photos/${currentUser.value.photo_avatar_filename}`
   })
 
   const login = async (credentials) => {

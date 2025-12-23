@@ -1,11 +1,19 @@
 {
+  "name": "websocket-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun websockets/index.js",
+    "dev": "bun --watch websockets/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "socket.io": "^4.7.5"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "nodemon": "^3.1.11"
-  },
-  "dependencies": {
-    "cors": "^2.8.5"
   }
 }

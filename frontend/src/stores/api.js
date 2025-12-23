@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 export const useAPIStore = defineStore('api', () => {
   //const API_BASE_URL = inject('apiBaseURL')
-  const API_BASE_URL = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+  const API_BASE_URL = (import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000') + '/api'
   const token = ref(localStorage.getItem('token')) // Tenta recuperar do storage
 
   // Configuração inicial do axios se o token existir
