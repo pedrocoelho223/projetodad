@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAPIStore } from '@/stores/api'
+import { useAuthStore } from '@/stores/auth'
 
 export const useCoinsStore = defineStore('coins', () => {
   const api = useAPIStore()
+  const auth = useAuthStore()
 
   const balance = ref(0)
   const transactions = ref([])
@@ -20,8 +22,9 @@ export const useCoinsStore = defineStore('coins', () => {
     error.value = null
     try {
       const res = await api.getCoinsBalance()
-      balance.value = res.data?.balance ?? res.data?.data?.balance ?? 0
+      balance.value = res.data?.balance ?? res.data?.data?.balance ?? auth.currentUser?.coins_balance ?? 0
     } catch (e) {
+      balance.value = auth.currentUser?.coins_balance ?? 0
       error.value = e.response?.data?.message || e.message
     } finally {
       loadingBalance.value = false
@@ -51,9 +54,13 @@ export const useCoinsStore = defineStore('coins', () => {
         reference: form.reference,
         value: form.value,
       })
-      success.value = 'Pagamento registado com sucesso!'
+
+      await auth.fetchCurrentUser(true)
+
       await fetchBalance()
       await fetchTransactions()
+
+      success.value = 'Pagamento registado com sucesso!'
     } catch (e) {
       error.value = e.response?.data?.message || e.message
     } finally {
