@@ -1,91 +1,104 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAPIStore } from './api'
-import axios from 'axios' // Precisamos disto para injetar o header
+import axios from 'axios'
+
+// Base URL para links (foto) — não usar localhost hardcoded
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') // remove /api no fim se existir
+  : '' // em prod com ingress /api relativo, foto pode precisar de host absoluto (ver nota abaixo)
 
 export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
 
-  // 1. Tenta recuperar o token do browser ao iniciar
   const token = ref(localStorage.getItem('token'))
   const currentUser = ref(null)
 
-  // Configura o axios imediatamente se houver token guardado
   if (token.value) {
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + token.value
   }
 
-  // Verificar se está logado pelo Token é mais rápido e evita "flickering" na UI
   const isLoggedIn = computed(() => !!token.value)
   const currentUserID = computed(() => currentUser.value?.id)
 
-  // URL photo
   const userPhotoUrl = computed(() => {
-    if (!currentUser.value?.photo_avatar_filename) return null
+    const filename = currentUser.value?.photo_avatar_filename
+    if (!filename) return null
 
-    // Forçar também aqui o porto 8000
-    return `http://localhost:8000/storage/photos/${currentUser.value.photo_avatar_filename}`
+    // Se tiveres API_BASE configurado (dev/prod com host), usa isso
+    if (API_BASE) {
+      return `${API_BASE}/storage/photos/${filename}`
+    }
+
+    // fallback: caminho relativo (funciona se o frontend for servido pelo mesmo host e o backend expuser /storage)
+    return `/storage/photos/${filename}`
   })
 
-  const login = async (credentials) => {
-    // 1. Pedir Token
-    const responseToken = await apiStore.postLogin(credentials)
+  // ✅ NOVO: buscar utilizador atual sempre que precisares (força refresh quando quiseres)
+  const fetchCurrentUser = async (force = false) => {
+    if (!token.value) return null
+    if (!force && currentUser.value) return currentUser.value
 
-    // NOTA: Confirma se o Laravel devolve 'access_token' ou apenas 'token'
-    const accessToken = responseToken.data.access_token || responseToken.data.token
-
-    if (accessToken) {
-      // 2. Guardar Token e Configurar Axios
-      token.value = accessToken
-      localStorage.setItem('token', accessToken)
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
-
-      // 3. Pedir Utilizador
-      const responseUser = await apiStore.getAuthUser()
-      currentUser.value = responseUser.data.data || responseUser.data
+    try {
+      const response = await apiStore.getAuthUser()
+      currentUser.value = response.data.data || response.data
       return currentUser.value
+    } catch (error) {
+      console.warn('Falha ao obter utilizador autenticado:', error)
+      await logout()
+      return null
     }
-    throw new Error("Token não recebido da API")
   }
 
-  // Registo com Login Automático
+  const login = async (credentials) => {
+    const responseToken = await apiStore.postLogin(credentials)
+    const accessToken = responseToken.data.access_token || responseToken.data.token
+
+    if (!accessToken) throw new Error('Token não recebido da API')
+
+    token.value = accessToken
+    localStorage.setItem('token', accessToken)
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
+
+    // ✅ garantir user fresco (inclui coins_balance)
+    await fetchCurrentUser(true)
+    return currentUser.value
+  }
+
   const register = async (formData) => {
     const response = await apiStore.postRegister(formData)
     const accessToken = response.data.access_token || response.data.token
 
-    if (accessToken) {
-      token.value = accessToken
-      localStorage.setItem('token', accessToken)
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
+    if (!accessToken) throw new Error('Token não recebido da API')
 
-      // A API de registo no AuthController já devolve o user, aproveitamos
-      currentUser.value = response.data.user
-      return currentUser.value
-    }
+    token.value = accessToken
+    localStorage.setItem('token', accessToken)
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
+
+    // Se a API já devolve user ok, guarda-o, senão faz fetch
+    currentUser.value = response.data.user || null
+    if (!currentUser.value) await fetchCurrentUser(true)
+
+    return currentUser.value
   }
 
-  // Atualizar dados do utilizador
   const updateProfile = async (formData) => {
     const response = await apiStore.postUpdateUser(formData)
-    // Atualizamos o user local com a resposta fresca da API
     currentUser.value = response.data.data || response.data
     return currentUser.value
   }
 
-  // [NOVO] Apagar Conta
   const deleteAccount = async (password) => {
     await apiStore.deleteUser(password)
-    await logout() // Limpa token e sessão
+    await logout()
   }
 
   const logout = async () => {
     try {
       await apiStore.postLogout()
     } catch (error) {
-      console.warn('Falha ao fazer logout:  ', error)
-      // Ignora erro se o token já tiver expirado
+      console.warn('Falha ao fazer logout:', error)
     } finally {
-      // Limpeza obrigatória
       token.value = null
       currentUser.value = null
       localStorage.removeItem('token')
@@ -93,17 +106,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Chama isto no main.js ou App.vue para não perderes o user no F5
+  // ✅ mantém este nome porque tu já o usas no app
+  // mas agora ele garante refresh do user se quiseres
   const loadUserFromStorage = async () => {
-    if (token.value && !currentUser.value) {
-      try {
-        const response = await apiStore.getAuthUser()
-        currentUser.value = response.data.data || response.data
-      } catch (error) {
-        console.warn('Falha ao restaurar sessão:', error)
-        logout() // Token inválido/expirado
-      }
-    }
+    // Antes: só corria se currentUser fosse null
+    // Agora: chama fetchCurrentUser (sem force) para restaurar no F5
+    await fetchCurrentUser(false)
   }
 
   return {
@@ -117,6 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
     updateProfile,
     deleteAccount,
     logout,
-    loadUserFromStorage
+    loadUserFromStorage,
+    fetchCurrentUser, // ✅ exporta para o Profile poder forçar refresh
   }
 })

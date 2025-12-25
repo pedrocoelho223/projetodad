@@ -4,6 +4,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\CoinController;
+use App\Http\Controllers\CoinPurchaseController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -20,6 +22,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::post('logout', [AuthController::class, 'logout']);
+
+    // Coins
+    Route::get('/coins/balance', [CoinController::class, 'balance']);
+    Route::get('/coins/transactions', [CoinController::class, 'transactions']);
+
+    // Purchase
+    Route::post('/coins/purchase', [CoinPurchaseController::class, 'purchase']);
+
 });
 
 Route::apiResource('games', GameController::class);
