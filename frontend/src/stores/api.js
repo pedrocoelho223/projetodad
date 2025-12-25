@@ -14,9 +14,9 @@ export const useAPIStore = defineStore('api', () => {
     timeout: 15000,
   })
 
-  // Configuração inicial do axios se o token existir
+  // Configuração inicial do http se o token existir
   if (token.value) {
-    axios.defaults.headers.common.Authorization = `Bearer ${token.value}`
+    http.defaults.headers.common.Authorization = `Bearer ${token.value}`
   }
 
   const setToken = (newToken) => {
@@ -113,6 +113,11 @@ export const useAPIStore = defineStore('api', () => {
 
   const playGameCard = (id, payload) => http.post(`/games/${id}/play`, payload)
 
+  // --- COINS ---
+  const getCoinsBalance = () => http.get('/coins/balance')
+  const getCoinsTransactions = () => http.get('/coins/transactions')
+  const postCoinsPurchase = (payload) => http.post('/coins/purchase', payload)
+
   return {
     token,
     gameQueryParameters,
@@ -135,5 +140,10 @@ export const useAPIStore = defineStore('api', () => {
     postGame,
     getGame,
     playGameCard,
+
+    // coins
+    getCoinsBalance,
+    getCoinsTransactions,
+    postCoinsPurchase,
   }
 })

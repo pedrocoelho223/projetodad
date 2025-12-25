@@ -1,86 +1,76 @@
 import { defineStore } from 'pinia'
-import { apiGetBalance, apiGetTransactions, apiPurchaseCoins } from '@/services/coins'
-import { useAuthStore } from '@/stores/auth'
+import { ref } from 'vue'
+import { useAPIStore } from '@/stores/api'
 
-export const useCoinsStore = defineStore('coins', {
-  state: () => ({
-    balance: 0,
-    transactions: [],
-    loadingBalance: false,
-    loadingTransactions: false,
-    loadingPurchase: false,
-    error: null,
-    success: null,
-  }),
+export const useCoinsStore = defineStore('coins', () => {
+  const api = useAPIStore()
 
-  actions: {
-    clearMessages() {
-      this.error = null
-      this.success = null
-    },
+  const balance = ref(0)
+  const transactions = ref([])
 
-    async fetchBalance() {
-      this.loadingBalance = true
-      this.error = null
+  const loadingBalance = ref(false)
+  const loadingTransactions = ref(false)
+  const loadingPurchase = ref(false)
 
-      try {
-        const res = await apiGetBalance()
-        this.balance = res.data?.coins_balance ?? 0
-      } catch (e) {
-        this.balance = 0
-        this.error = e?.response?.data?.message || 'Não foi possível obter o saldo'
-      } finally {
-        this.loadingBalance = false
-      }
-    },
+  const error = ref(null)
+  const success = ref(null)
 
-    async fetchTransactions() {
-      this.loadingTransactions = true
-      this.error = null
+  const fetchBalance = async () => {
+    loadingBalance.value = true
+    error.value = null
+    try {
+      const res = await api.getCoinsBalance()
+      balance.value = res.data?.balance ?? res.data?.data?.balance ?? 0
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+    } finally {
+      loadingBalance.value = false
+    }
+  }
 
-      try {
-        const res = await apiGetTransactions()
-        this.transactions = Array.isArray(res.data) ? res.data : []
-      } catch (e) {
-        this.transactions = []
-        this.error = e?.response?.data?.message || 'Não foi possível obter o histórico'
-      } finally {
-        this.loadingTransactions = false
-      }
-    },
+  const fetchTransactions = async () => {
+    loadingTransactions.value = true
+    error.value = null
+    try {
+      const res = await api.getCoinsTransactions()
+      transactions.value = res.data?.data ?? res.data ?? []
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+    } finally {
+      loadingTransactions.value = false
+    }
+  }
 
-    async purchaseCoins(form) {
-      this.loadingPurchase = true
-      this.error = null
-      this.success = null
+  const purchaseCoins = async (form) => {
+    loadingPurchase.value = true
+    error.value = null
+    success.value = null
+    try {
+      await api.postCoinsPurchase({
+        type: form.type,
+        reference: form.reference,
+        value: form.value,
+      })
+      success.value = 'Pagamento registado com sucesso!'
+      await fetchBalance()
+      await fetchTransactions()
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+    } finally {
+      loadingPurchase.value = false
+    }
+  }
 
-      try {
-        const res = await apiPurchaseCoins({
-          type: form.type,
-          reference: form.reference,
-          value: form.value,
-        })
-
-        this.success = res.data?.message || 'Compra efetuada com sucesso'
-
-        // Atualiza store coins
-        await this.fetchBalance()
-        await this.fetchTransactions()
-
-        // ✅ Atualiza também o user (para o Profile mostrar coins_balance certo)
-        const authStore = useAuthStore()
-        await authStore.fetchCurrentUser(true)
-
-        return res.data
-      } catch (e) {
-        this.error =
-          e?.response?.data?.message ||
-          e?.response?.data?.details?.message ||
-          'Erro ao processar pagamento'
-        throw e
-      } finally {
-        this.loadingPurchase = false
-      }
-    },
-  },
+  return {
+    balance,
+    transactions,
+    loadingBalance,
+    loadingTransactions,
+    loadingPurchase,
+    error,
+    success,
+    fetchBalance,
+    fetchTransactions,
+    purchaseCoins,
+  }
 })
