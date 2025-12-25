@@ -14,22 +14,27 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Perfil do User (GET, PUT, DELETE)
+
     Route::get('/users/me', [UserController::class, 'show']);
-    Route::put('/users/me', [UserController::class, 'update']); // Editar perfil
-    Route::patch('/users/me', [UserController::class, 'update']); // (Opcional) compatibilidade
-    Route::delete('/users/me', [UserController::class, 'destroy']); // Apagar conta
+    Route::put('/users/me', [UserController::class, 'update']);
+    Route::patch('/users/me', [UserController::class, 'update']);
+    Route::delete('/users/me', [UserController::class, 'destroy']);
 
-
-    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Coins
     Route::get('/coins/balance', [CoinController::class, 'balance']);
-    Route::get('/coins/transactions', [CoinController::class, 'transactions']);
-
-    // Purchase
     Route::post('/coins/purchase', [CoinPurchaseController::class, 'purchase']);
 
+    // GAMES protegidos
+    Route::apiResource('games', GameController::class);
+
+    // Single-player: jogar carta
+    Route::post('/games/{game}/play', [GameController::class, 'play']);
 });
 
-Route::apiResource('games', GameController::class);
+
+//Permitir anonimo no single-player
+ Route::apiResource('games', GameController::class)->only(['index','show']);
+ Route::post('/games', [GameController::class, 'store']);
+ Route::post('/games/{game}/play', [GameController::class, 'play']);

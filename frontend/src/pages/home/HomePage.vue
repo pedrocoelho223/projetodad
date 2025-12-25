@@ -5,9 +5,9 @@
     <div class="header">
       <h2>Lobby de Jogos (Bisca)</h2>
       <div class="actions">
-        <button class="btn-primary" @click="createGame" :disabled="creating">
-          {{ creating ? 'A criar...' : '+ Novo Jogo' }}
-        </button>
+        <button class="btn-primary" @click="onClickCreate" :disabled="creating">
+  {{ creating ? 'A criar...' : '+ Novo Jogo' }}
+</button>
         <button class="btn-secondary" @click="fetchGames(api.gameQueryParameters.page)">
           ↻ Atualizar
         </button>
@@ -69,7 +69,7 @@
                   :src="getPhotoUrl(game.winner.photo_avatar_filename)"
                   class="avatar"
                   alt="Avatar"
-                  @error="$event.target.style.display='none'"
+                  @error="onImgError"
                 />
                 <span class="winner-name">🏆 {{ game.winner.name }}</span>
               </div>
@@ -78,11 +78,11 @@
 
             <td>
               <button
-                v-if="game.status === 'pending' || game.status === 'P'"
+                v-if="game.status === 'Pending' || game.status === 'P'"
                 class="btn-join"
                 @click="joinGame(game.id)"
               >
-                Juntar-me
+               Entrar
               </button>
               <span v-else class="status-label">{{ game.status }}</span>
             </td>
@@ -105,6 +105,12 @@ import { ref, onMounted } from 'vue';
 import { useAPIStore } from '@/stores/api';
 // Não precisas de importar axios, usamos a api store!
 
+
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+
 const api = useAPIStore();
 const games = ref([]);
 const meta = ref({});
@@ -113,12 +119,12 @@ const creating = ref(false);
 const error = ref(null);
 
 // --- FUNÇÃO CRÍTICA PARA AS IMAGENS ---
-const getPhotoUrl = (filename) => {
-  if (!filename) return '/avatar-default.png';
+const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
 
-  // Forçar o uso do porto 8000, onde as imagens existem fisicamente
-  return `http://localhost:8000/storage/photos/${filename}`;
-};
+const getPhotoUrl = (filename) => {
+  if (!filename) return `${API_DOMAIN}/storage/photos/anonymous.png`
+  return `${API_DOMAIN}/storage/photos/${filename}`
+}
 
 // --- FORMATADORES ---
 const formatDate = (dateString) => {
@@ -136,6 +142,7 @@ const getTypeName = (type) => {
 };
 
 // --- AÇÕES ---
+const onImgError = (e) => { e.target.src = `${API_DOMAIN}/storage/photos/anonymous.png` }
 
 const fetchGames = async (page = 1) => {
   loading.value = true;
@@ -157,6 +164,12 @@ const changePage = (newPage) => {
     fetchGames(newPage);
 };
 
+const onClickCreate = async () => {
+  console.log('[UI] click Novo Jogo')
+  await createGame()
+}
+
+
 const createGame = async () => {
     creating.value = true;
     error.value = null;
@@ -164,7 +177,7 @@ const createGame = async () => {
         // CORREÇÃO CRÍTICA: Usar api.postGame
         // Isto usa a Store, que já tem o URL certo e o Token de Auth
         await api.postGame({
-            type: '1',
+            type: '3',
             status: 'pending',
             began_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
         });
@@ -181,7 +194,7 @@ const createGame = async () => {
 
 const joinGame = (gameId) => {
     console.log("A entrar no jogo:", gameId);
-    // Futuro: router.push(`/game/${gameId}`);
+    router.push(`/game/${gameId}`);
 };
 
 onMounted(() => {

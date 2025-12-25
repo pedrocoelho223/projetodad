@@ -1,40 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAPIStore } from './api'
-import axios from 'axios'
 
-// Base URL para links (foto) — não usar localhost hardcoded
-const API_BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') // remove /api no fim se existir
-  : '' // em prod com ingress /api relativo, foto pode precisar de host absoluto (ver nota abaixo)
+const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
 
 export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
 
+  // token único (a store api já o usa; aqui só refletimos o mesmo valor)
   const token = ref(localStorage.getItem('token'))
   const currentUser = ref(null)
 
-  if (token.value) {
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + token.value
-  }
-
   const isLoggedIn = computed(() => !!token.value)
-  const currentUserID = computed(() => currentUser.value?.id)
+  const currentUserID = computed(() => currentUser.value?.id ?? null)
 
+  // URL do avatar (usa sempre o host do API)
   const userPhotoUrl = computed(() => {
     const filename = currentUser.value?.photo_avatar_filename
-    if (!filename) return null
-
-    // Se tiveres API_BASE configurado (dev/prod com host), usa isso
-    if (API_BASE) {
-      return `${API_BASE}/storage/photos/${filename}`
-    }
-
-    // fallback: caminho relativo (funciona se o frontend for servido pelo mesmo host e o backend expuser /storage)
-    return `/storage/photos/${filename}`
+    return filename
+      ? `${API_DOMAIN}/storage/photos/${filename}`
+      : `${API_DOMAIN}/storage/photos/anonymous.png`
   })
 
-  // ✅ NOVO: buscar utilizador atual sempre que precisares (força refresh quando quiseres)
+  //buscar utilizador atual sempre que precisares (força refresh quando quiseres)
   const fetchCurrentUser = async (force = false) => {
     if (!token.value) return null
     if (!force && currentUser.value) return currentUser.value
@@ -51,16 +39,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const login = async (credentials) => {
+    // apiStore.postLogin já guarda token e mete header no http
     const responseToken = await apiStore.postLogin(credentials)
     const accessToken = responseToken.data.access_token || responseToken.data.token
 
     if (!accessToken) throw new Error('Token não recebido da API')
 
+    // manter espelho local
     token.value = accessToken
-    localStorage.setItem('token', accessToken)
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
 
-    // ✅ garantir user fresco (inclui coins_balance)
     await fetchCurrentUser(true)
     return currentUser.value
   }
@@ -72,10 +59,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken) throw new Error('Token não recebido da API')
 
     token.value = accessToken
-    localStorage.setItem('token', accessToken)
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken
 
-    // Se a API já devolve user ok, guarda-o, senão faz fetch
+    // se a API vier com user, ok; senão fetch
     currentUser.value = response.data.user || null
     if (!currentUser.value) await fetchCurrentUser(true)
 
@@ -83,8 +68,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const updateProfile = async (formData) => {
-    const response = await apiStore.postUpdateUser(formData)
-    currentUser.value = response.data.data || response.data
+    await apiStore.postUpdateUser(formData)
+    // força refresh para apanhar avatar novo e campos atualizados
+    await fetchCurrentUser(true)
     return currentUser.value
   }
 
@@ -102,15 +88,12 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null
       currentUser.value = null
       localStorage.removeItem('token')
-      delete axios.defaults.headers.common['Authorization']
     }
   }
 
-  // ✅ mantém este nome porque tu já o usas no app
-  // mas agora ele garante refresh do user se quiseres
   const loadUserFromStorage = async () => {
-    // Antes: só corria se currentUser fosse null
-    // Agora: chama fetchCurrentUser (sem force) para restaurar no F5
+    // usado no refresh/F5
+    token.value = localStorage.getItem('token')
     await fetchCurrentUser(false)
   }
 
@@ -120,12 +103,14 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     currentUserID,
     userPhotoUrl,
+
     login,
     register,
     updateProfile,
     deleteAccount,
     logout,
+
     loadUserFromStorage,
-    fetchCurrentUser, // ✅ exporta para o Profile poder forçar refresh
+    fetchCurrentUser, // exporta para o Profile poder forçar refresh
   }
 })

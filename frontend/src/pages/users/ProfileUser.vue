@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, RouterLink } from 'vue-router'
 
@@ -20,6 +20,17 @@ const form = ref({
   photo: null,
 })
 
+const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+
+// URL do avatar (alinhado com o cluster: /storage/photos/*)
+
+const userPhotoUrl = computed(() => {
+  const filename = authStore.currentUser?.photo_avatar_filename
+  return filename
+    ? `${API_DOMAIN}/storage/photos/${filename}`
+    : `${API_DOMAIN}/storage/photos/anonymous.png`
+})
+
 onMounted(async () => {
   if (!authStore.isLoggedIn) {
     router.push({ name: 'login' })
@@ -31,22 +42,22 @@ onMounted(async () => {
 })
 
 const resetForm = () => {
-  if (authStore.currentUser) {
-    form.value = {
-      name: authStore.currentUser.name,
-      nickname: authStore.currentUser.nickname,
-      email: authStore.currentUser.email,
-      password: '',
-      photo: null,
-    }
+  const u = authStore.currentUser
+  if (!u) return
+
+  form.value = {
+    name: u.name || '',
+    nickname: u.nickname || '',
+    email: u.email || '',
+    password: '',
+    photo: null,
   }
 }
 
 const onFileChange = (e) => {
   const file = e.target.files[0]
-  if (file) {
-    form.value.photo = file
-  }
+  form.value.photo = file || null
+
 }
 
 const handleUpdate = async () => {
@@ -69,6 +80,8 @@ const handleUpdate = async () => {
     }
 
     await authStore.updateProfile(formData)
+    await authStore.fetchCurrentUser(true)
+
 
     message.value = { text: 'Perfil atualizado com sucesso!', type: 'success' }
     isEditing.value = false
@@ -94,7 +107,7 @@ const handleDeleteAccount = async () => {
     await authStore.deleteAccount(deletePassword.value)
     router.push({ name: 'home' })
   } catch (e) {
-    if (e.response && e.response.data && e.response.data.message) {
+    if (e.response?.data?.message) {
       alert(e.response.data.message)
     } else {
       alert('Erro ao apagar conta. A password está correta?')
@@ -114,8 +127,11 @@ const handleDeleteAccount = async () => {
       <div class="md:col-span-1">
         <div class="bg-white shadow rounded-lg p-6 text-center">
           <div class="relative w-32 h-32 mx-auto mb-4">
-            <img :src="authStore.userPhotoUrl || '/anonymous.png'" alt="Avatar"
-              class="rounded-full w-full h-full object-cover border-4 border-indigo-50" />
+            <img
+              :src="userPhotoUrl"
+              alt="Avatar"
+              class="rounded-full w-full h-full object-cover border-4 border-indigo-50"
+            />
           </div>
           <h3 class="text-xl font-bold text-gray-900">{{ authStore.currentUser?.name }}</h3>
           <p class="text-sm text-gray-500">@{{ authStore.currentUser?.nickname }}</p>

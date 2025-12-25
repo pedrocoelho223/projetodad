@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Game extends Model
 {
@@ -12,7 +12,6 @@ class Game extends Model
 
     use HasFactory;
 
-    // Garante que estes campos podem ser escritos
     protected $fillable = [
         'type',
         'status',
@@ -23,27 +22,33 @@ class Game extends Model
         'winner_user_id',
         'player1_user_id',
         'player2_user_id',
-        // Adiciona outros campos se necessário (ex: deck_used, custom)
+        'custom', // <-- IMPORTANTÍSSIMO
     ];
 
-public function player1()
-{
-    return $this->belongsTo(User::class, 'player1_user_id');
-}
+    protected $casts = [
+        'began_at' => 'datetime',
+        'ended_at' => 'datetime',
+        'custom' => 'array', // <-- IMPORTANTÍSSIMO (para o Vue ler custom.hands etc)
+        'total_time' => 'integer',
+    ];
 
-public function player2()
-{
-    return $this->belongsTo(User::class, 'player2_user_id');
-}
+    public function player1(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'player1_user_id');
+    }
 
-public function winner()
-{
-    return $this->belongsTo(User::class, 'winner_user_id');
-}
+    public function player2(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'player2_user_id');
+    }
 
-public function created_by()
-{
-    return $this->belongsTo(User::class, 'created_by_user_id');
-}
+    public function winner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'winner_user_id');
+    }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
 }
