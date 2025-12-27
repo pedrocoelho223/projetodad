@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\CoinController;
 use App\Http\Controllers\CoinPurchaseController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WsServiceController;
 
 
 
@@ -31,6 +32,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Single-player: jogar carta
     Route::post('/games/{game}/play', [GameController::class, 'play']);
+});
+
+Route::middleware('ws.service')->prefix('ws')->group(function () {
+    Route::post('/multiplayer/game/create', [WsServiceController::class, 'createMultiplayerGame']);
+    Route::post('/multiplayer/match/create', [WsServiceController::class, 'createMatch']);
+    Route::post('/multiplayer/game/end', [WsServiceController::class, 'endGame']);
+    Route::post('/multiplayer/match/end', [WsServiceController::class, 'endMatch']);
 });
 
 

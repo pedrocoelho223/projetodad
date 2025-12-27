@@ -25,23 +25,32 @@ spec:
             - name: APP_URL
               value: "http://api-dad-group-5-172.22.21.253.sslip.io"
             - name: DB_CONNECTION
-              value: mysql
-            - name: DB_HOST
-              value: mysql 
-            - name: DB_PORT
-              value: "3306"
+              value: sqlite
             - name: DB_DATABASE
-              value: memory_game 
-            - name: DB_USERNAME
-              value: root
-            - name: DB_PASSWORD
-              value: "root" 
+              value: /app/database/database.sqlite
+            #- name: DB_HOST
+            #  value: mysql 
+            #- name: DB_PORT
+            #  value: "3306"
+            #- name: DB_DATABASE
+            #  value: dad_group_5
+            #- name: DB_USERNAME
+            #  value: root
+            #- name: DB_PASSWORD
+            #  value: "root" 
+            - name: WS_SERVICE_TOKEN
+              value: "super-secret-change-me"
+
             
             
             - name: SANCTUM_STATEFUL_DOMAINS
               value: "web-dad-group-5-172.22.21.253.sslip.io, localhost:5173"
             - name: SESSION_DOMAIN
               value: ".172.22.21.253.sslip.io"
+            #adicionado para teste 27/12 1h31 para ver se resolve o problema de sessao
+            - name: SESSION_DRIVER
+              value: "file"
+
 
           resources:
             requests:

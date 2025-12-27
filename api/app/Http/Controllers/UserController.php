@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\User;
 
 class UserController extends Controller
 {
@@ -66,8 +67,15 @@ class UserController extends Controller
 
         // 2. Verificar dependências (Requisito G5: Soft Delete se tiver histórico)
         // Tens de verificar se existem jogos ou transações associadas
-        $hasActivity = \App\Models\CoinTransaction::where('user_id', $user->id)->exists();
-        // || \App\Models\Game::where('player1_user_id', $user->id)... (adicionar check de jogos depois)
+        // ✅ Verificar se o utilizador tem atividade (coins/games/matches)
+        $hasActivity =
+            \App\Models\CoinTransaction::where('user_id', $user->id)->exists()
+            || \App\Models\Game::where('player1_user_id', $user->id)->exists()
+            || \App\Models\Game::where('player2_user_id', $user->id)->exists()
+            || \App\Models\Game::where('winner_user_id', $user->id)->exists()
+            || \App\Models\MatchModel::where('player1_user_id', $user->id)->exists()
+            || \App\Models\MatchModel::where('player2_user_id', $user->id)->exists()
+            || \App\Models\MatchModel::where('winner_user_id', $user->id)->exists();
 
         if ($hasActivity) {
             // Soft Delete (mantém dados, desativa conta)

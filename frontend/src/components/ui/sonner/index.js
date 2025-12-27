@@ -1,1 +1,1 @@
-export { default as Toaster } from "./Sonner.vue";
+export { default } from "./AppSonner.vue";

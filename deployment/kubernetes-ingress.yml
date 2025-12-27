@@ -1,3 +1,4 @@
+kubectl -n dad-group-5 apply -f - << 'EOF'
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,39 +9,45 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     nginx.ingress.kubernetes.io/websocket-services: "websocket-server"
 spec:
+  ingressClassName: traefik
   rules:
-    # Regra do Frontend
-    - host: web-dad-group-5-172.22.21.253.sslip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web # Isto agora bate certo com o service do ficheiro Vue
-                port:
-                  number: 80
-    
-    # Regra da API
-    - host: api-dad-group-5-172.22.21.253.sslip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: api # Isto agora bate certo com o service do ficheiro Laravel
-                port:
-                  number: 8000
+  - host: web-dad-group-5-172.22.21.253.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web
+            port:
+              number: 80
 
-    # Regra dos WebSockets
-    - host: ws-dad-group-5-172.22.21.253.sslip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: websocket-server
-                port:
-                  number: 3000
+  - host: api-dad-group-5-172.22.21.253.sslip.io
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api
+            port:
+              number: 8000
+      - path: /storage
+        pathType: Prefix
+        backend:
+          service:
+            name: api
+            port:
+              number: 8000
+
+  - host: ws-dad-group-5-172.22.21.253.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: websocket-server
+            port:
+              number: 3000
+EOF

@@ -49,6 +49,14 @@ const router = createRouter({
         { path: 'websockets', component: WebsocketsPage },
       ],
     },
+    {
+      path: '/games/multiplayer',
+      component: () => import('@/pages/games/MultiplayerLobby.vue'),
+    },
+    {
+      path: '/games/multiplayer/:roomId',
+      component: () => import('@/pages/games/MultiplayerRoom.vue'),
+    },
   ],
 })
 

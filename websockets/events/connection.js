@@ -1,28 +1,29 @@
+import { createRoom, joinRoom, setReady, playCard, resign } from "../state/roomManager.js";
+
 export const handleConnectionEvents = (io, socket) => {
-  
-  // 1. Criar ou Entrar num Jogo (Sala)
-  socket.on("join_game", (gameId) => {
-    // O socket "entra" na sala com o ID do jogo
-    socket.join(gameId); 
-    console.log(`Socket ${socket.id} entrou no jogo ${gameId}`);
-    
-    // Avisa APENAS quem está nessa sala que alguém entrou
-    io.to(gameId).emit("player_joined", { 
-      socketId: socket.id, 
-      message: "Novo jogador entrou!" 
-    });
+
+  socket.on("create_room", async (payload, cb) => {
+    try { cb?.({ ok:true, ...(await createRoom(io, socket, payload)) }); }
+    catch (e) { cb?.({ ok:false, error: e?.message ?? "Erro" }); }
   });
 
-  // 2. Jogada (Virar Carta)
-  socket.on("play_move", (data) => {
-    // data deve trazer { gameId, cardIndex, value }
-    
-    // Reenvia a jogada para o outro jogador na mesma sala
-    socket.to(data.gameId).emit("opponent_move", data);
+  socket.on("join_room", async (payload, cb) => {
+    try { cb?.({ ok:true, ...(await joinRoom(io, socket, payload)) }); }
+    catch (e) { cb?.({ ok:false, error: e?.message ?? "Erro" }); }
   });
-  
-  // 3. Sair
-  socket.on("disconnect", () => {
-    console.log("Cliente desconectado:", socket.id);
+
+  socket.on("ready", async (payload, cb) => {
+    try { cb?.({ ok:true, ...(await setReady(io, socket, payload)) }); }
+    catch (e) { cb?.({ ok:false, error: e?.message ?? "Erro" }); }
+  });
+
+  socket.on("play_card", async (payload, cb) => {
+    try { cb?.({ ok:true, ...(await playCard(io, socket, payload)) }); }
+    catch (e) { cb?.({ ok:false, error: e?.message ?? "Erro" }); }
+  });
+
+  socket.on("resign", async (payload, cb) => {
+    try { cb?.({ ok:true, ...(await resign(io, socket, payload)) }); }
+    catch (e) { cb?.({ ok:false, error: e?.message ?? "Erro" }); }
   });
 };
