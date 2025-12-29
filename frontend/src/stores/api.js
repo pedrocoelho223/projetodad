@@ -1,23 +1,29 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+
 import { ref } from 'vue'
 
 export const useAPIStore = defineStore('api', () => {
-  const API_BASE_URL = (import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000') + '/api'
+  // Base: http://.../api
+  const domain = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+  const API_BASE_URL = `${domain}/api`
+
   const token = ref(localStorage.getItem('token'))
 
-  // axios instance privado (NÃO exportar no return)
   const http = axios.create({
     baseURL: API_BASE_URL,
     timeout: 15000,
+    withCredentials: true, // se não usares cookies/sanctum podes tirar
   })
 
+  // aplica token ao iniciar
   if (token.value) {
     http.defaults.headers.common.Authorization = `Bearer ${token.value}`
   }
 
   const setToken = (newToken) => {
     token.value = newToken
+
     if (newToken) {
       localStorage.setItem('token', newToken)
       http.defaults.headers.common.Authorization = `Bearer ${newToken}`
@@ -25,9 +31,10 @@ export const useAPIStore = defineStore('api', () => {
       localStorage.removeItem('token')
       delete http.defaults.headers.common.Authorization
     }
+
   }
 
-  // AUTH
+    // AUTH
   const postLogin = async (credentials) => {
     const response = await http.post('/login', credentials)
     setToken(response.data.access_token || response.data.token)
@@ -59,10 +66,17 @@ export const useAPIStore = defineStore('api', () => {
   const deleteUser = (password) => http.delete('/users/me', { data: { password } })
 
   // GAMES
-  const getGames = (paramsString) => http.get(`/games?${paramsString}`)
+  const getGames = (page = 1) => http.get('/games', { params: { page } })
   const postGame = (data) => http.post('/games', data)
   const getGame = (id) => http.get(`/games/${id}`)
   const playGameCard = (id, payload) => http.post(`/games/${id}/play`, payload)
+
+  // -------------------------
+  // LEADERBOARD (BD via API)
+  // -------------------------
+  // Endpoint sugerido: GET /api/leaderboard/top?scope=overall&limit=3
+  const getTopPlayers = ({ scope = 'overall', limit = 3 } = {}) =>
+  http.get('/leaderboard/top', { params: { scope, limit } })
 
   // ✅ COINS
   const getCoinsBalance = () => http.get('/coins/balance')
@@ -70,7 +84,11 @@ export const useAPIStore = defineStore('api', () => {
   const postCoinsPurchase = (payload) => http.post('/coins/purchase', payload)
 
   return {
+    domain,
+    API_BASE_URL,
+    http,
     token,
+    setToken,
 
     // auth
     postLogin,
@@ -87,6 +105,9 @@ export const useAPIStore = defineStore('api', () => {
     postGame,
     getGame,
     playGameCard,
+
+    // leaderboard
+    getTopPlayers,
 
     // coins
     getCoinsBalance,

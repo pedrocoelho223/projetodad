@@ -9,6 +9,8 @@ use App\Http\Controllers\CoinPurchaseController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WsServiceController;
 
+use App\Http\Controllers\LeaderboardController;
+
 
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,25 +26,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Coins
+    // Tem de ser 'purchase' e não 'buy'
+Route::post('coins/purchase', [CoinPurchaseController::class, 'purchase']);
+
+    // Rota para VER SALDO
     Route::get('/coins/balance', [CoinController::class, 'balance']);
-    Route::post('/coins/purchase', [CoinPurchaseController::class, 'purchase']);
+
+    // Rota para VER HISTÓRICO DE COMPRAS
+    Route::get('coins/transactions', [CoinController::class, 'transactions']);
 
     // GAMES protegidos
     Route::apiResource('games', GameController::class);
 
-    // Single-player: jogar carta
-    Route::post('/games/{game}/play', [GameController::class, 'play']);
+    // Leaderboard
+Route::get('/leaderboard/top', [GameController::class, 'index']);
+
+
 });
 
-Route::middleware('ws.service')->prefix('ws')->group(function () {
+/*Route::middleware('ws.service')->prefix('ws')->group(function () {
     Route::post('/multiplayer/game/create', [WsServiceController::class, 'createMultiplayerGame']);
     Route::post('/multiplayer/match/create', [WsServiceController::class, 'createMatch']);
     Route::post('/multiplayer/game/end', [WsServiceController::class, 'endGame']);
     Route::post('/multiplayer/match/end', [WsServiceController::class, 'endMatch']);
-});
-
-
-//Permitir anonimo no single-player
- Route::apiResource('games', GameController::class)->only(['index','show']);
- Route::post('/games', [GameController::class, 'store']);
- Route::post('/games/{game}/play', [GameController::class, 'play']);
+});*/

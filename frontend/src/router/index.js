@@ -8,6 +8,15 @@ import { useAuthStore } from '@/stores/auth'
 import Register from '@/components/auth/RegisterUser.vue'
 import Profile from '@/pages/users/ProfileUser.vue'
 
+
+
+//import MultiplayerRoom from '@/pages/games/multiplayer/MultiplayerRoom.vue'
+
+//import MultiplayerLobby from '@/pages/games/MultiplayerLobby.vue'
+
+import CoinsPage from '@/pages/coins/CoinsPage.vue'
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -38,7 +47,7 @@ const router = createRouter({
     {
       path: '/coins',
       name: 'coins',
-      component: () => import('@/pages/coins/CoinsPage.vue'),
+      component: CoinsPage,
       meta: { requiresAuth: true },
     },
     {
@@ -49,14 +58,15 @@ const router = createRouter({
         { path: 'websockets', component: WebsocketsPage },
       ],
     },
-    {
+    /*{
       path: '/games/multiplayer',
-      component: () => import('@/pages/games/MultiplayerLobby.vue'),
+      component: MultiplayerLobby,
     },
     {
       path: '/games/multiplayer/:roomId',
-      component: () => import('@/pages/games/MultiplayerRoom.vue'),
-    },
+      component: MultiplayerRoom,
+    },*/
+
   ],
 })
 

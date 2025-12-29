@@ -25,7 +25,7 @@ spec:
   - host: api-dad-group-5-172.22.21.253.sslip.io
     http:
       paths:
-      - path: /api
+      - path: /
         pathType: Prefix
         backend:
           service:

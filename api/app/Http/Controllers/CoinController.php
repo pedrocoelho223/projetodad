@@ -26,11 +26,17 @@ class CoinController extends Controller
     {
         $user = $request->user();
 
-        if ($user->type !== 'P') {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        // Admins veem todas as transações
+        if ($user->type === 'A') {
+        // Carrega todas as transações de toda a gente (com dados do user para saberes de quem é)
+        $transactions = CoinTransaction::with(['type', 'user'])
+            ->orderByDesc('transaction_datetime')
+            ->get();
 
-        // Se tiveres relação "type" no model CoinTransaction, mantém o with('type')
+        return response()->json($transactions);
+    }
+
+        // Jogador (Vê apenas sãs suas transações)
         $transactions = CoinTransaction::with('type')
             ->where('user_id', $user->id)
             ->orderByDesc('transaction_datetime')

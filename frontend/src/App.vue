@@ -22,19 +22,17 @@
 <script setup>
 import { RouterLink, RouterView } from "vue-router";
 import { ref, onMounted } from "vue";
-
 import { toast } from "vue-sonner";
 import "vue-sonner/style.css";
-
-// ✅ NÃO importes a pasta "sonner" (no Docker pode falhar).
 import Sonner from "@/components/ui/sonner/AppSonner.vue";
-
 import NavBar from "./components/layout/NavBar.vue";
 import { useAuthStore } from "./stores/auth";
-import { useSocketStore } from "./stores/socket";
+
+// COMENTADO: Não precisamos disto para G1 e G2
+// import { useSocketStore } from "./stores/socket";
 
 const authStore = useAuthStore();
-const socketStore = useSocketStore();
+// const socketStore = useSocketStore(); // COMENTADO
 
 const year = new Date().getFullYear();
 const pageTitle = ref(`DAD ${year}/${String(year + 1).slice(-2)}`);
@@ -48,7 +46,8 @@ const logout = () => {
 };
 
 onMounted(() => {
-  socketStore.handleConnection();
+  // COMENTADO: Evita o erro "socket is undefined"
+  // socketStore.handleConnection();
 });
 </script>
 

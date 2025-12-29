@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div>
     <h1>Bem-vindo ao Jogo da Bisca</h1>
     <div class="game-list-container">
@@ -145,20 +145,32 @@ const getTypeName = (type) => {
 const onImgError = (e) => { e.target.src = `${API_DOMAIN}/storage/photos/anonymous.png` }
 
 const fetchGames = async (page = 1) => {
-  loading.value = true;
-  api.gameQueryParameters.page = page;
+  loading.value = true
+  error.value = null
 
   try {
-    const response = await api.getGames();
-    games.value = response.data.data;
-    meta.value = response.data.meta;
+    const res = await api.getGames(page)
+    const payload = res.data
+
+    games.value = res.data.data
+
+    const m = payload?.meta ?? {}
+    meta.value = {
+      page: m.current_page ?? page,
+      last_page: m.last_page ?? 1,
+      total: m.total ?? 0,
+      per_page: m.per_page ?? 15,
+    }
   } catch (e) {
-    error.value = 'Erro ao carregar jogos.';
-    console.error(e);
+    console.error('fetchGames failed:', e)
+    games.value = []
+    meta.value = { page: 1, last_page: 1, total: 0, per_page: 15 }
+    error.value = e
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
 
 const changePage = (newPage) => {
     fetchGames(newPage);
@@ -242,4 +254,415 @@ button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: none; f
 
 .pagination { margin-top: 20px; display: flex; justify-content: center; gap: 15px; align-items: center; }
 .error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+</style> -->
+
+<template>
+  <div class="home-container">
+    <header class="mb-4">
+      <h1 class="fw-bold">Bisca</h1>
+      <p class="text-secondary">Joga, compete nos rankings e ganha moedas!</p>
+    </header>
+
+    <div class="main-grid">
+      <section class="game-modes">
+        <h3 class="section-title">Jogar</h3>
+        <p class="text-muted text-sm">Escolhe um modo para iniciar uma partida</p>
+
+        <div class="cards-grid">
+          <div class="game-card" @click="createGame('3', 'single')">
+            <div class="icon">🤖</div>
+            <div class="details">
+              <strong>Bisca 3 (Bot)</strong>
+              <span>Singleplayer</span>
+            </div>
+          </div>
+
+          <div class="game-card" @click="createGame('9', 'single')">
+            <div class="icon">🧩</div>
+            <div class="details">
+              <strong>Bisca 9 (Bot)</strong>
+              <span>Singleplayer</span>
+            </div>
+          </div>
+
+          <div class="game-card multiplayer" @click="createGame('3', 'multi')">
+            <div class="icon">⚔️</div>
+            <div class="details">
+              <strong>Bisca 3</strong>
+              <span>Multiplayer</span>
+            </div>
+          </div>
+
+          <div class="game-card multiplayer" @click="createGame('9', 'multi')">
+            <div class="icon">🏆</div>
+            <div class="details">
+              <strong>Bisca 9</strong>
+              <span>Multiplayer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="section-title">Lobby de Jogos Ativos</h4>
+            <button class="btn-refresh" @click="fetchGames(1)">↻ Atualizar</button>
+          </div>
+
+          <div v-if="loading" class="text-center p-3">A carregar lobby...</div>
+          <div v-else-if="games.length === 0" class="empty-state">
+            Não há jogos pendentes. Cria um novo!
+          </div>
+
+          <table v-else class="simple-table">
+            <thead>
+              <tr>
+                <th>Criador</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="game in games" :key="game.id">
+                <td>
+                  {{ game.player1 ? game.player1.nickname : 'User #' + game.player1_user_id }}
+                </td>
+                <td>
+                  <span class="badge">{{ game.type == '3' ? 'Bisca 3' : 'Bisca 9' }}</span>
+                </td>
+                <td>{{ game.status }}</td>
+                <td>
+                  <button v-if="isPending(game.status)" class="btn-join" @click="joinGame(game.id)">
+                    Entrar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="info-card mb-4">
+          <h4>Quick Links</h4>
+          <ul class="link-list">
+            <li>📊 <a @click.prevent="router.push('/leaderboards')" href="#">Leaderboards</a></li>
+            <li>
+              📑 <a @click.prevent="router.push('/statistics')" href="#">Estatísticas Globais</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h4>Top Players</h4>
+          <p class="text-xs text-muted">Melhores jogadores por vitórias</p>
+
+          <div class="leaderboard-list">
+            <div v-for="(player, index) in topPlayers" :key="player.id" class="lb-item">
+              <div class="lb-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
+              <div class="lb-info">
+                <span class="lb-name">{{ player.nickname }}</span>
+                <span class="lb-stats">⭐ {{ player.total_wins }} Vitórias</span>
+              </div>
+              <div class="lb-icon">🏆</div>
+            </div>
+
+            <div v-if="topPlayers.length === 0" class="text-muted text-sm p-2">
+              Sem dados de ranking.
+            </div>
+          </div>
+
+          <div class="text-center mt-3">
+            <a href="#" class="text-sm link-primary">Ver Ranking Completo →</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useAPIStore } from '@/stores/api'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const api = useAPIStore()
+
+// State
+const games = ref([])
+const topPlayers = ref([]) // Novo estado para Leaderboard
+const loading = ref(false)
+const meta = ref({})
+
+
+
+// --- API ACTIONS ---
+
+const fetchGames = async (page = 1) => {
+  loading.value = true
+  try {
+    // Certifica-te que api.getGames está a funcionar na store
+    const res = await api.getGames(page)
+    games.value = res.data.data || []
+    // Mapeamento simples de paginação
+    if (res.data.meta) meta.value = res.data.meta
+  } catch (e) {
+    console.error('Erro ao buscar jogos:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const isPending = (status) => status === 'P' || status === 'Pending'
+
+/*const fetchTopPlayers = async () => {
+  try {
+    const res = await api.getTopPlayers({ scope: 'overall', limit: 3 })
+    topPlayers.value = res.data.data ?? []
+  } catch (e) {
+    console.error("Erro leaderboard", e)
+    topPlayers.value = []
+  }
+}*/
+
+
+const createGame = async (type, mode) => {
+  // Lógica diferenciada para Single vs Multi se necessário
+  // No PDF diz que singleplayer é contra BOT.
+  // Se for 'single', talvez precises de uma flag extra ou criar jogo localmente.
+  // Assumindo criação padrão na API:
+
+  alert("Funcionalidade de Jogos (G3) desligada temporariamente.");
+  return;
+/*
+  try {
+    console.log(`A criar jogo Tipo: ${type}, Modo: ${mode}`)
+    await api.postGame({
+      type: type,
+      status: 'P', // Pending
+      began_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      // Adicionar flag de singleplayer se a API suportar
+    })
+    await fetchGames(1)
+  } catch (e) {
+    alert('Erro ao criar jogo: ' + (e.response?.data?.message || e.message))
+  }*/
+}
+
+const joinGame = (gameId) => {
+  router.push(`/game/${gameId}`)
+}
+
+onMounted(() => {
+ // fetchGames()
+//fetchTopPlayers()
+})
+</script>
+
+<style scoped>
+/* Variáveis e Fontes */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+.home-container {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Section Titles */
+.section-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.text-secondary {
+  color: #64748b;
+}
+.text-muted {
+  color: #94a3b8;
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+
+/* Cards Grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.game-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.game-card .icon {
+  font-size: 2rem;
+}
+.game-card .details {
+  display: flex;
+  flex-direction: column;
+}
+.game-card .details strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+.game-card .details span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Sidebar & Leaderboard */
+.info-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.link-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+.link-list li {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.link-list a {
+  text-decoration: none;
+  color: #334155;
+}
+
+.leaderboard-list {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lb-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+.lb-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-right: 12px;
+}
+.rank-1 {
+  background: #eab308;
+} /* Ouro */
+.rank-2 {
+  background: #94a3b8;
+} /* Prata */
+.rank-3 {
+  background: #b45309;
+} /* Bronze */
+
+.lb-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.lb-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #334155;
+}
+.lb-stats {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Tabela Simplificada */
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+.simple-table th {
+  text-align: left;
+  color: #64748b;
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.simple-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+.btn-join {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.btn-refresh {
+  background: none;
+  border: 1px solid #e2e8f0;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+}
+.badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
 </style>

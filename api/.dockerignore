@@ -1,5 +1,5 @@
 /node_modules /vendor
 
-.git .gitignore .env .idea .vscode
+.git .gitignore .idea .vscode
 
 /storage/.key /storage/framework/cache/ /storage/framework/sessions/* /storage/framework/views/* /public/storage
