@@ -3,9 +3,12 @@
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
+
 use Illuminate\Http\Request;
+
 use App\Http\Controllers\CoinController;
 use App\Http\Controllers\CoinPurchaseController;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WsServiceController;
 
@@ -44,9 +47,6 @@ Route::get('/leaderboard/top', [GameController::class, 'index']);
 
 });
 
-/*Route::middleware('ws.service')->prefix('ws')->group(function () {
-    Route::post('/multiplayer/game/create', [WsServiceController::class, 'createMultiplayerGame']);
-    Route::post('/multiplayer/match/create', [WsServiceController::class, 'createMatch']);
-    Route::post('/multiplayer/game/end', [WsServiceController::class, 'endGame']);
-    Route::post('/multiplayer/match/end', [WsServiceController::class, 'endMatch']);
-});*/
+// Rotas públicas para Jogo Single Player
+Route::post('games/single/start', [GameController::class, 'start']);
+Route::post('games/single/play', [GameController::class, 'play']);

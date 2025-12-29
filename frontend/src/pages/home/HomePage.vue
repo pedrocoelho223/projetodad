@@ -428,26 +428,16 @@ const isPending = (status) => status === 'P' || status === 'Pending'
 
 
 const createGame = async (type, mode) => {
-  // Lógica diferenciada para Single vs Multi se necessário
-  // No PDF diz que singleplayer é contra BOT.
-  // Se for 'single', talvez precises de uma flag extra ou criar jogo localmente.
-  // Assumindo criação padrão na API:
+  // 1. Se for Single Player, redireciona para a mesa de jogo
+  if (mode === 'single') {
+    // Nota: O nosso motor atual faz Bisca de 3 por defeito.
+    // Futuramente podes passar o tipo como query param: router.push(`/game/single?type=${type}`)
+    router.push('/game/single')
+    return
+  }
 
-  alert("Funcionalidade de Jogos (G3) desligada temporariamente.");
-  return;
-/*
-  try {
-    console.log(`A criar jogo Tipo: ${type}, Modo: ${mode}`)
-    await api.postGame({
-      type: type,
-      status: 'P', // Pending
-      began_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      // Adicionar flag de singleplayer se a API suportar
-    })
-    await fetchGames(1)
-  } catch (e) {
-    alert('Erro ao criar jogo: ' + (e.response?.data?.message || e.message))
-  }*/
+  // 2. Se for Multiplayer (G4 - Futuro)
+  alert("O modo Multiplayer (Websockets) será implementado brevemente!")
 }
 
 const joinGame = (gameId) => {
@@ -455,7 +445,7 @@ const joinGame = (gameId) => {
 }
 
 onMounted(() => {
- // fetchGames()
+ fetchGames()
 //fetchTopPlayers()
 })
 </script>

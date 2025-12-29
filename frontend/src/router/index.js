@@ -8,14 +8,13 @@ import { useAuthStore } from '@/stores/auth'
 import Register from '@/components/auth/RegisterUser.vue'
 import Profile from '@/pages/users/ProfileUser.vue'
 
-
+import BiscaGame from '@/components/game/BiscaGame.vue'
 
 //import MultiplayerRoom from '@/pages/games/multiplayer/MultiplayerRoom.vue'
 
 //import MultiplayerLobby from '@/pages/games/MultiplayerLobby.vue'
 
 import CoinsPage from '@/pages/coins/CoinsPage.vue'
-
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -58,6 +57,11 @@ const router = createRouter({
         { path: 'websockets', component: WebsocketsPage },
       ],
     },
+    {
+      path: '/game/single',
+      name: 'SinglePlayer',
+      component: BiscaGame,
+    },
     /*{
       path: '/games/multiplayer',
       component: MultiplayerLobby,
@@ -66,7 +70,6 @@ const router = createRouter({
       path: '/games/multiplayer/:roomId',
       component: MultiplayerRoom,
     },*/
-
   ],
 })
 
