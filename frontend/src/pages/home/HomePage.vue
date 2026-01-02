@@ -346,7 +346,7 @@ button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: none; f
         <div class="info-card mb-4">
           <h4>Quick Links</h4>
           <ul class="link-list">
-            <li>📊 <a @click.prevent="router.push('/leaderboards')" href="#">Leaderboards</a></li>
+            <li>📊 <a @click.prevent="router.push('/leaderboard')" href="#">Leaderboards</a></li>
             <li>
               📑 <a @click.prevent="router.push('/statistics')" href="#">Estatísticas Globais</a>
             </li>
@@ -362,7 +362,7 @@ button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: none; f
               <div class="lb-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</div>
               <div class="lb-info">
                 <span class="lb-name">{{ player.nickname }}</span>
-                <span class="lb-stats">⭐ {{ player.total_wins }} Vitórias</span>
+                <span class="lb-stats">⭐ {{ player.wins }} Vitórias</span>
               </div>
               <div class="lb-icon">🏆</div>
             </div>
@@ -385,6 +385,7 @@ button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: none; f
 import { ref, onMounted } from 'vue'
 import { useAPIStore } from '@/stores/api'
 import { useRouter } from 'vue-router'
+import http from '@/lib/axios'
 
 const router = useRouter()
 const api = useAPIStore()
@@ -444,10 +445,22 @@ const joinGame = (gameId) => {
   router.push(`/game/${gameId}`)
 }
 
+const fetchTopPlayers = async () => {
+  try {
+    // Usa o axios configurado que importaste
+    const res = await http.get('/leaderboards/games')
+    topPlayers.value = res.data.slice(0, 3)
+  } catch (e) {
+    console.error("Erro ao carregar leaderboard na sidebar:", e)
+  }
+}
+
 onMounted(() => {
- fetchGames()
-//fetchTopPlayers()
+ //fetchGames()
+ fetchTopPlayers()
 })
+
+
 </script>
 
 <style scoped>

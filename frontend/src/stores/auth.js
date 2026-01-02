@@ -43,10 +43,13 @@ export const useAuthStore = defineStore('auth', () => {
     const responseToken = await apiStore.postLogin(credentials)
     const accessToken = responseToken.data.access_token || responseToken.data.token
 
+
+    
     if (!accessToken) throw new Error('Token não recebido da API')
 
     // manter espelho local
     token.value = accessToken
+    localStorage.setItem('token', accessToken) 
 
     await fetchCurrentUser(true)
     return currentUser.value
@@ -59,6 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken) throw new Error('Token não recebido da API')
 
     token.value = accessToken
+    localStorage.setItem('token', accessToken) 
 
     // se a API vier com user, ok; senão fetch
     currentUser.value = response.data.user || null

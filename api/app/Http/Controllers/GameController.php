@@ -92,4 +92,15 @@ class GameController extends Controller
             'state' => $engine->getState()
         ]);
     }
+
+    //histórico de jogos
+    public function myHistory(Request $request) {
+    return Game::where(function($query) use ($request) {
+        $query->where('player1_id', $request->user()->id)
+              ->orWhere('player2_id', $request->user()->id);
+    })
+    ->where('status', 'E') // Apenas jogos terminados (Ended)
+    ->orderBy('ended_at', 'desc')
+    ->get();
+}
 }

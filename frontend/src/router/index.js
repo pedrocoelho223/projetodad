@@ -1,24 +1,28 @@
-import HomePage from '@/pages/home/HomePage.vue'
-import LoginPage from '@/pages/login/LoginPage.vue'
-import LaravelPage from '@/pages/testing/LaravelPage.vue'
-import WebsocketsPage from '@/pages/testing/WebsocketsPage.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+// Páginas públicas
+import HomePage from '@/pages/home/HomePage.vue'
+import LoginPage from '@/pages/login/LoginPage.vue'
 import Register from '@/components/auth/RegisterUser.vue'
-import Profile from '@/pages/users/ProfileUser.vue'
+import PublicStats from '@/pages/views/PublicStats.vue'
 
+// Páginas autenticadas
+import Profile from '@/pages/users/ProfileUser.vue'
+import CoinsPage from '@/pages/coins/CoinsPage.vue'
+import MyHistory from '@/pages/history/MyHistory.vue'
 import BiscaGame from '@/components/game/BiscaGame.vue'
 
-//import MultiplayerRoom from '@/pages/games/multiplayer/MultiplayerRoom.vue'
-
-//import MultiplayerLobby from '@/pages/games/MultiplayerLobby.vue'
-
-import CoinsPage from '@/pages/coins/CoinsPage.vue'
+// Testing
+import LaravelPage from '@/pages/testing/LaravelPage.vue'
+import WebsocketsPage from '@/pages/testing/WebsocketsPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    /* =====================
+       PÚBLICAS
+    ====================== */
     {
       path: '/',
       name: 'home',
@@ -38,8 +42,18 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
     {
+      path: '/statistics',
+      name: 'PublicStats',
+      component: PublicStats,
+      meta: { requiresAuth: false },
+    },
+
+    /* =====================
+       AUTENTICADAS
+    ====================== */
+    {
       path: '/profile',
-      name: 'Profile',
+      name: 'profile',
       component: Profile,
       meta: { requiresAuth: true },
     },
@@ -50,6 +64,43 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/my/games',
+      name: 'MyHistory',
+      component: MyHistory,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/game/single',
+      name: 'SinglePlayer',
+      component: BiscaGame,
+      meta: { requiresAuth: true },
+    },
+
+    /* =====================
+       ADMIN
+    ====================== */
+    {
+      path: '/admin/statistics',
+      name: 'AdminStats',
+      component: () => import('@/pages/statistics/AdminStats.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/transactions',
+      name: 'AdminTransactions',
+      component: () => import('@/pages/statistics/AdminTransactions.vue'),
+      meta: { requiresAdmin: true },
+    },
+
+    /* =====================
+       OUTROS
+    ====================== */
+    {
+      path: '/leaderboard',
+      name: 'Leaderboard',
+      component: () => import('@/pages/leaderboard/Leaderboard.vue'),
+    },
+    {
       path: '/testing',
       meta: { requiresAuth: false },
       children: [
@@ -57,30 +108,28 @@ const router = createRouter({
         { path: 'websockets', component: WebsocketsPage },
       ],
     },
-    {
-      path: '/game/single',
-      name: 'SinglePlayer',
-      component: BiscaGame,
-    },
-    /*{
-      path: '/games/multiplayer',
-      component: MultiplayerLobby,
-    },
-    {
-      path: '/games/multiplayer/:roomId',
-      component: MultiplayerRoom,
-    },*/
   ],
 })
 
+/* =====================
+   GUARDS
+====================== */
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
+  // precisa estar autenticado
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     next({ name: 'login' })
-  } else {
-    next()
+    return
   }
+
+  // precisa ser admin
+  if (to.meta.requiresAdmin && authStore.currentUser?.type !== 'A') {
+    next({ name: 'home' })
+    return
+  }
+
+  next()
 })
 
 export default router

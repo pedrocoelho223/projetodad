@@ -2,6 +2,23 @@
   <div>
     <NavigationMenu>
       <NavigationMenuList class="justify-around gap-20">
+        
+        <NavigationMenuItem>
+          <NavigationMenuLink as-child>
+            <RouterLink to="/leaderboard" class="font-medium hover:text-blue-600 px-3">
+              🏆 Ranking
+            </RouterLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem v-if="authStore.currentUser?.type === 'A'">
+          <NavigationMenuLink as-child>
+            <RouterLink to="/admin/statistics" class="font-medium text-purple-600 hover:text-purple-800 px-3">
+              📊 Estatísticas
+            </RouterLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
         <NavigationMenuItem>
           <NavigationMenuTrigger>Testing</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -52,7 +69,6 @@
                 <span v-if="authStore.currentUser.type === 'A'" class="flex items-center gap-2">
                     🛡️ <span class="hidden md:inline">Transações</span>
                 </span>
-
                 <span v-else class="flex items-center gap-2">
                     💰 {{ authStore.currentUser.coins_balance ?? 0 }} <span class="hidden md:inline">Moedas</span>
                 </span>
@@ -73,8 +89,13 @@
                 <div v-else class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                     👤
                 </div>
-
                 <span class="text-sm font-medium">{{ authStore.currentUser.nickname }}</span>
+              </RouterLink>
+            </NavigationMenuLink>
+
+            <NavigationMenuLink as-child>
+              <RouterLink to="/my/games" class="text-sm font-medium hover:text-blue-600 px-2">
+                📜 Histórico
               </RouterLink>
             </NavigationMenuLink>
 
