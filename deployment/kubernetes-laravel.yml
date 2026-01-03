@@ -16,7 +16,7 @@ spec:
       priorityClassName: high-priority
       containers:
         - name: api
-          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.7
+          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.33
           ports:
             - containerPort: 80
           env:
@@ -24,20 +24,17 @@ spec:
               value: "base64:sYWgAnhEAQpQ++JtCEyAUgwFfJTWVsotjs0FHtgN7h0=" 
             - name: APP_URL
               value: "http://api-dad-group-5-172.22.21.253.sslip.io"
-            - name: DB_CONNECTION
-              value: sqlite
+            - name: DB_HOST
+              value: mysql  # Isto assume que o teu Serviço do MySQL se chama 'mysql'
+            - name: DB_PORT
+              value: "3306"
             - name: DB_DATABASE
-              value: /app/database/database.sqlite
-            #- name: DB_HOST
-            #  value: mysql 
-            #- name: DB_PORT
-            #  value: "3306"
-            #- name: DB_DATABASE
-            #  value: dad_group_5
-            #- name: DB_USERNAME
-            #  value: root
-            #- name: DB_PASSWORD
-            #  value: "root" 
+              value: dad_group_5 # Confirma se criaste a BD com este nome no ficheiro mysql.yml (ou se é 'laravel')
+            - name: DB_USERNAME
+              value: root
+            - name: DB_PASSWORD
+              value: root
+
             - name: WS_SERVICE_TOKEN
               value: "super-secret-change-me"
 

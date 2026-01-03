@@ -1,4 +1,3 @@
-kubectl -n dad-group-5 apply -f - << 'EOF'
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -50,4 +49,4 @@ spec:
             name: websocket-server
             port:
               number: 3000
-EOF
+

@@ -78,7 +78,7 @@ export const useAPIStore = defineStore('api', () => {
   const getTopPlayers = ({ scope = 'overall', limit = 3 } = {}) =>
   http.get('/leaderboard/top', { params: { scope, limit } })
 
-  // ✅ COINS
+  // COINS
   const getCoinsBalance = () => http.get('/coins/balance')
   const getCoinsTransactions = () => http.get('/coins/transactions')
   const postCoinsPurchase = (payload) => http.post('/coins/purchase', payload)

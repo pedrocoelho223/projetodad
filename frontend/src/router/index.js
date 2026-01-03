@@ -27,19 +27,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomePage,
-      meta: { requiresAuth: false },
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginPage,
-      meta: { requiresAuth: false },
-    },
-    {
-      path: '/register',
-      name: 'Register',
-      component: Register,
-      meta: { requiresAuth: false },
     },
     {
       path: '/statistics',
@@ -47,21 +34,37 @@ const router = createRouter({
       component: PublicStats,
       meta: { requiresAuth: false },
     },
+    {
+      path: '/leaderboard',
+      name: 'Leaderboard',
+      component: () => import('@/pages/leaderboard/Leaderboard.vue'),
+    },
 
     /* =====================
        AUTENTICADAS
     ====================== */
     {
       path: '/profile',
-      name: 'profile',
+      name: 'profile', // Mantive minúsculo para consistência
       component: Profile,
       meta: { requiresAuth: true },
     },
+     {
+      path: '/register',
+      name: 'Register',
+      component: Register,
+    },
+
     {
       path: '/coins',
-      name: 'coins',
+      name: 'CoinsPage',
       component: CoinsPage,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
     },
     {
       path: '/my/games',
@@ -93,13 +96,8 @@ const router = createRouter({
     },
 
     /* =====================
-       OUTROS
+       TESTING
     ====================== */
-    {
-      path: '/leaderboard',
-      name: 'Leaderboard',
-      component: () => import('@/pages/leaderboard/Leaderboard.vue'),
-    },
     {
       path: '/testing',
       meta: { requiresAuth: false },
@@ -117,18 +115,20 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  // precisa estar autenticado
-  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+  // 1. Verificar Autenticação
+  if (to.meta.requiresAuth && !authStore.user) { // Assumindo que verifica se o user existe
     next({ name: 'login' })
     return
   }
 
-  // precisa ser admin
-  if (to.meta.requiresAdmin && authStore.currentUser?.type !== 'A') {
+  // 2. Verificar Admin
+  // Nota: Usa authStore.user ou authStore.currentUser conforme a tua store
+  if (to.meta.requiresAdmin && authStore.user?.type !== 'A') {
     next({ name: 'home' })
     return
   }
 
+  // 3. Prosseguir
   next()
 })
 
