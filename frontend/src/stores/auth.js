@@ -6,6 +6,7 @@ const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
 
 export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
+  const user = ref(null);
 
   // token único (a store api já o usa; aqui só refletimos o mesmo valor)
   const token = ref(localStorage.getItem('token'))
@@ -43,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
     const responseToken = await apiStore.postLogin(credentials)
     const accessToken = responseToken.data.access_token || responseToken.data.token
 
-
+  
     
     if (!accessToken) throw new Error('Token não recebido da API')
 
@@ -54,6 +55,14 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchCurrentUser(true)
     return currentUser.value
   }
+
+  const isAdmin = computed(() => {
+        return user.value ? user.value.type === 'A' : false;
+    })
+
+    const isAuthenticated = computed(() => {
+        return !!user.value;
+    })
 
   const register = async (formData) => {
     const response = await apiStore.postRegister(formData)
@@ -104,6 +113,9 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token,
     currentUser,
+    user,
+    isAdmin,
+    isAuthenticated,
     isLoggedIn,
     currentUserID,
     userPhotoUrl,

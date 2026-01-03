@@ -12,6 +12,7 @@ import Profile from '@/pages/users/ProfileUser.vue'
 import CoinsPage from '@/pages/coins/CoinsPage.vue'
 import MyHistory from '@/pages/history/MyHistory.vue'
 import BiscaGame from '@/components/game/BiscaGame.vue'
+import AdminUsers from '@/pages/admin/AdminUsers.vue';
 
 // Testing
 import LaravelPage from '@/pages/testing/LaravelPage.vue'
@@ -93,6 +94,12 @@ const router = createRouter({
       name: 'AdminTransactions',
       component: () => import('@/pages/statistics/AdminTransactions.vue'),
       meta: { requiresAdmin: true },
+    },
+    {
+        path: '/admin/users',
+        name: 'AdminUsers',
+        component: AdminUsers,
+        meta: { requiresAuth: true } 
     },
 
     /* =====================

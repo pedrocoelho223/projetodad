@@ -95,4 +95,43 @@ class UserController extends Controller
 
         return response()->json(['message' => $msg]);
     }
+    public function index()
+    {
+        // Como não usamos Resources, devolvemos um array 'data' manualmente
+        // para manter a estrutura que o frontend espera.
+        return response()->json([
+            'data' => User::all()
+        ]);
+    }
+
+    /**
+     * Bloquear um utilizador
+     */
+    public function block(User $user)
+    {
+        $user->blocked = 1; // Ou true, dependendo da base de dados
+        $user->save();
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'Utilizador bloqueado com sucesso.'
+        ]);
+    }
+
+    /**
+     * Desbloquear um utilizador
+     */
+    public function unblock(User $user)
+    {
+        $user->blocked = 0; // Ou false
+        $user->save();
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'Utilizador desbloqueado com sucesso.'
+        ]);
+    }
+
+
 }
+

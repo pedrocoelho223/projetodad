@@ -66,9 +66,13 @@
                   'text-blue-600': authStore.currentUser.type === 'A'
                 }"
               >
-                <span v-if="authStore.currentUser.type === 'A'" class="flex items-center gap-2">
-                    🛡️ <span class="hidden md:inline">Transações</span>
-                </span>
+                <router-link 
+                  v-if="authStore.isAdmin" 
+                  to="/admin/users" 
+                  class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Admin Users
+                </router-link>
                 <span v-else class="flex items-center gap-2">
                     💰 {{ authStore.currentUser.coins_balance ?? 0 }} <span class="hidden md:inline">Moedas</span>
                 </span>

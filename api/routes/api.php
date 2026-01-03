@@ -8,6 +8,7 @@ use App\Http\Controllers\CoinController;
 use App\Http\Controllers\CoinPurchaseController;
 use App\Http\Controllers\GameHistoryController;
 use App\Http\Controllers\StatisticsController;
+use App\Http\Middleware\EnsureUserIsAdmin;
 
 // --- ROTAS PÚBLICAS ---
 Route::post('/login', [AuthController::class, 'login']);
@@ -39,4 +40,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('admin/statistics', [StatisticsController::class, 'getAdminStats']);
         Route::get('admin/transactions', [StatisticsController::class, 'getAdminTransactions']);
     });
+});
+
+// Rotas protegidas por Autenticação E Admin
+Route::middleware(['auth:sanctum', EnsureUserIsAdmin::class])->group(function () {
+    
+    // Gestão de Utilizadores
+    Route::get('/users', [UserController::class, 'index']);
+    Route::patch('/users/{user}/block', [UserController::class, 'block']);
+    Route::patch('/users/{user}/unblock', [UserController::class, 'unblock']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    
+    Route::get('admin/statistics', [StatisticsController::class, 'getAdminStats']);
+    Route::get('admin/transactions', [StatisticsController::class, 'getAdminTransactions']);
 });
