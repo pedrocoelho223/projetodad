@@ -10,7 +10,7 @@ export const serverStart = (port) => {
     cors: {
       origin: [
         "http://web-dad-group-5-172.22.21.253.sslip.io",
-        "http://localhost:5173",
+        "http://localhost:5174",
         "http://localhost"
       ],
       methods: ["GET", "POST"],
