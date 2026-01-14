@@ -1,13 +1,10 @@
-kubectl -n dad-group-5 apply -f - << 'EOF'
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
   namespace: dad-group-5
   annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/websocket-services: "websocket-server"
+    
 spec:
   ingressClassName: traefik
   rules:
@@ -50,4 +47,3 @@ spec:
             name: websocket-server
             port:
               number: 3000
-EOF
