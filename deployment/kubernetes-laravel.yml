@@ -16,7 +16,7 @@ spec:
       priorityClassName: high-priority
       containers:
         - name: api
-          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.33
+          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.35
           ports:
             - containerPort: 80
           env:
@@ -24,16 +24,19 @@ spec:
               value: "base64:sYWgAnhEAQpQ++JtCEyAUgwFfJTWVsotjs0FHtgN7h0=" 
             - name: APP_URL
               value: "http://api-dad-group-5-172.22.21.253.sslip.io"
-            - name: DB_HOST
-              value: mysql  # Isto assume que o teu Serviço do MySQL se chama 'mysql'
-            - name: DB_PORT
-              value: "3306"
+            - name: DB_CONNECTION
+              value: sqlite  # Isto assume que o teu Serviço do MySQL se chama 'mysql'
             - name: DB_DATABASE
-              value: dad_group_5 # Confirma se criaste a BD com este nome no ficheiro mysql.yml (ou se é 'laravel')
-            - name: DB_USERNAME
-              value: root
-            - name: DB_PASSWORD
-              value: root
+              value: "/app/database/database.sqlite"
+
+           # - name: DB_PORT
+           #   value: "3306"
+           # - name: DB_DATABASE
+           #   value: dad_group_5 # Confirma se criaste a BD com este nome no ficheiro mysql.yml (ou se é 'laravel')
+           # - name: DB_USERNAME
+           #   value: root
+           # - name: DB_PASSWORD
+           #   value: root
 
             - name: WS_SERVICE_TOKEN
               value: "super-secret-change-me"
@@ -41,7 +44,7 @@ spec:
             
             
             - name: SANCTUM_STATEFUL_DOMAINS
-              value: "web-dad-group-5-172.22.21.253.sslip.io, localhost:5173"
+              value: "web-dad-group-5-172.22.21.253.sslip.io, localhost:5174"
             - name: SESSION_DOMAIN
               value: ".172.22.21.253.sslip.io"
             #adicionado para teste 27/12 1h31 para ver se resolve o problema de sessao

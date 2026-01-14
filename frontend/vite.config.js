@@ -13,9 +13,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  
+
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
       '/storage': {
         target: 'http://localhost:8000', // Aponta para o Docker API
