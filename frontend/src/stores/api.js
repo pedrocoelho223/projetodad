@@ -5,7 +5,7 @@ import { ref } from 'vue'
 
 export const useAPIStore = defineStore('api', () => {
   // Base: http://.../api
-  const domain = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+  const domain = import.meta.env.VITE_API_DOMAIN
   const API_BASE_URL = `${domain}/api`
 
   const token = ref(localStorage.getItem('token'))
@@ -66,17 +66,23 @@ export const useAPIStore = defineStore('api', () => {
   const deleteUser = (password) => http.delete('/users/me', { data: { password } })
 
   // GAMES
-  const getGames = (page = 1) => http.get('/games', { params: { page } })
+  /*const getGames = (page = 1) => http.get('/games', { params: { page } })
   const postGame = (data) => http.post('/games', data)
   const getGame = (id) => http.get(`/games/${id}`)
-  const playGameCard = (id, payload) => http.post(`/games/${id}/play`, payload)
+  const playGameCard = (id, payload) => http.post(`/games/${id}/play`, payload)*/
+  // GAMES (rotas reais do backend)
+const startGame = (payload) => http.post('/games/single/start', payload)
+const playGame = (payload) => http.post('/games/single/play', payload)
+const getMyGames = () => http.get('/my/games')
+
 
   // -------------------------
   // LEADERBOARD (BD via API)
   // -------------------------
   // Endpoint sugerido: GET /api/leaderboard/top?scope=overall&limit=3
-  const getTopPlayers = ({ scope = 'overall', limit = 3 } = {}) =>
-  http.get('/leaderboard/top', { params: { scope, limit } })
+const getTopPlayers = () =>
+  http.get('/leaderboards/games')
+
 
   // COINS
   const getCoinsBalance = () => http.get('/coins/balance')
@@ -101,10 +107,13 @@ export const useAPIStore = defineStore('api', () => {
     deleteUser,
 
     // games
-    getGames,
+    /*getGames,
     postGame,
     getGame,
-    playGameCard,
+    playGameCard,*/
+    startGame,
+    playGame,
+    getMyGames,
 
     // leaderboard
     getTopPlayers,

@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useAPIStore } from './api'
+import { useAPIStore } from '@/stores/api'
 
-const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+const API_DOMAIN = import.meta.env.VITE_API_DOMAIN
 
 export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
@@ -44,13 +44,13 @@ export const useAuthStore = defineStore('auth', () => {
     const responseToken = await apiStore.postLogin(credentials)
     const accessToken = responseToken.data.access_token || responseToken.data.token
 
-  
-    
+
+
     if (!accessToken) throw new Error('Token não recebido da API')
 
     // manter espelho local
     token.value = accessToken
-    localStorage.setItem('token', accessToken) 
+    localStorage.setItem('token', accessToken)
 
     await fetchCurrentUser(true)
     return currentUser.value
@@ -71,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken) throw new Error('Token não recebido da API')
 
     token.value = accessToken
-    localStorage.setItem('token', accessToken) 
+    localStorage.setItem('token', accessToken)
 
     // se a API vier com user, ok; senão fetch
     currentUser.value = response.data.user || null

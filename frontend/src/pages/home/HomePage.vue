@@ -384,11 +384,10 @@ button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: none; f
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAPIStore } from '@/stores/api'
+const api = useAPIStore()
 import { useRouter } from 'vue-router'
-import http from '@/lib/axios'
 
 const router = useRouter()
-const api = useAPIStore()
 
 // State
 const games = ref([])
@@ -433,7 +432,7 @@ const createGame = async (type, mode) => {
   if (mode === 'single') {
     // Nota: O nosso motor atual faz Bisca de 3 por defeito.
     // Futuramente podes passar o tipo como query param: router.push(`/game/single?type=${type}`)
-    router.push('/game/single')
+    router.push('/games/single')
     return
   }
 
@@ -442,18 +441,20 @@ const createGame = async (type, mode) => {
 }
 
 const joinGame = (gameId) => {
-  router.push(`/game/${gameId}`)
+  router.push(`/games/${gameId}`)
 }
 
 const fetchTopPlayers = async () => {
   try {
-    // Usa o axios configurado que importaste
-    const res = await http.get('/leaderboards/games')
-    topPlayers.value = res.data.slice(0, 3)
+    const res = await api.getTopPlayers()
+    topPlayers.value = res.data.data ?? res.data ?? []
+    topPlayers.value = topPlayers.value.slice(0, 3)
   } catch (e) {
     console.error("Erro ao carregar leaderboard na sidebar:", e)
+    topPlayers.value = []
   }
 }
+
 
 onMounted(() => {
  //fetchGames()

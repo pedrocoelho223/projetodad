@@ -20,7 +20,7 @@ const form = ref({
   photo: null,
 })
 
-const API_DOMAIN = import.meta.env.VITE_API_DOMAIN || 'http://localhost:8000'
+const API_DOMAIN = import.meta.env.VITE_API_DOMAIN
 
 // URL do avatar (alinhado com o cluster: /storage/photos/*)
 

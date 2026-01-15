@@ -81,21 +81,24 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import http from '../../lib/axios'
+import { useAPIStore } from '@/stores/api'
+defineOptions({
+  name: 'LeaderboardPage'
+})
 
+const api = useAPIStore()
 const topUsers = ref([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const response = await http.get('/leaderboards/games')
-    const data = response.data
+    const response = await api.getTopPlayers()
 
-    // Ordenação conforme G4:
-    // 1. Vitórias
-    // 2. Capotes
-    // 3. Bandeiras
-    // 4. Data da última vitória (opcional)
+    // a API pode devolver:
+    // { data: [...] } OU diretamente [...]
+    const data = response.data.data ?? response.data ?? []
+
+    // Ordenação conforme regras
     topUsers.value = data
       .sort((a, b) => {
         if (b.wins !== a.wins) return b.wins - a.wins
@@ -105,11 +108,12 @@ onMounted(async () => {
         if ((b.bandeiras ?? 0) !== (a.bandeiras ?? 0)) {
           return (b.bandeiras ?? 0) - (a.bandeiras ?? 0)
         }
-        return new Date(a.last_win_at ?? 0) - new Date(b.last_win_at ?? 0)
+        return new Date(b.last_win_at ?? 0) - new Date(a.last_win_at ?? 0)
       })
       .slice(0, 10)
   } catch (error) {
     console.error('Erro ao carregar a leaderboard:', error)
+    topUsers.value = []
   } finally {
     loading.value = false
   }

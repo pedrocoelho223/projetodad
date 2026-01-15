@@ -16,59 +16,30 @@ spec:
       priorityClassName: high-priority
       containers:
         - name: api
-          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.35
+          image: registry-172.22.21.115.sslip.io/dad-group-5/api:v3.0.92
           ports:
-            - containerPort: 80
+            - containerPort: 80 #mudei de 8000 para 80 para bater certo com o service no dia 15/01
           env:
             - name: APP_KEY
-              value: "base64:sYWgAnhEAQpQ++JtCEyAUgwFfJTWVsotjs0FHtgN7h0=" 
+              value: "base64:sYWgAnhEAQpQ++JtCEyAUgwFfJTWVsotjs0FHtgN7h0="
             - name: APP_URL
               value: "http://api-dad-group-5-172.22.21.253.sslip.io"
             - name: DB_CONNECTION
-              value: sqlite  # Isto assume que o teu Serviço do MySQL se chama 'mysql'
+              value: sqlite
             - name: DB_DATABASE
               value: "/app/database/database.sqlite"
-
-           # - name: DB_PORT
-           #   value: "3306"
-           # - name: DB_DATABASE
-           #   value: dad_group_5 # Confirma se criaste a BD com este nome no ficheiro mysql.yml (ou se é 'laravel')
-           # - name: DB_USERNAME
-           #   value: root
-           # - name: DB_PASSWORD
-           #   value: root
-
             - name: WS_SERVICE_TOKEN
               value: "super-secret-change-me"
-
-            
-            
             - name: SANCTUM_STATEFUL_DOMAINS
-              value: "web-dad-group-5-172.22.21.253.sslip.io, localhost:5174"
+              value: "web-dad-group-5-172.22.21.253.sslip.io,localhost:5174"
             - name: SESSION_DOMAIN
               value: ".172.22.21.253.sslip.io"
-            #adicionado para teste 27/12 1h31 para ver se resolve o problema de sessao
             - name: SESSION_DRIVER
               value: "file"
-
-
           resources:
             requests:
-              memory: "64Mi"  # Reduzi de 256 para 64
+              memory: "64Mi"
               cpu: "50m"
             limits:
-              memory: "256Mi" # Reduzi de 512 para 256
+              memory: "256Mi"
               cpu: "200m"
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: api  
-  namespace: dad-group-5
-spec:
-  ports:
-    - port: 8000        
-      targetPort: 80
-  selector:
-    app: laravel-app

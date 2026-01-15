@@ -17,10 +17,17 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/leaderboards/games', [GameHistoryController::class, 'leaderboardGames']); // G4
 Route::get('/statistics/public', [StatisticsController::class, 'getPublicStats']);     // G6
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/games/single/start', [GameController::class, 'start']);
+    Route::post('/games/single/play', [GameController::class, 'play']);
+});
+
+
+
 // --- ROTAS PROTEGIDAS ---
 Route::middleware('auth:sanctum')->group(function () {
 
-    
+
 
     // Perfil
     Route::get('/users/me', [UserController::class, 'show']);
@@ -44,13 +51,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Rotas protegidas por Autenticação E Admin
 Route::middleware(['auth:sanctum', EnsureUserIsAdmin::class])->group(function () {
-    
+
     // Gestão de Utilizadores
     Route::get('/users', [UserController::class, 'index']);
     Route::patch('/users/{user}/block', [UserController::class, 'block']);
     Route::patch('/users/{user}/unblock', [UserController::class, 'unblock']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
-    
+
     Route::get('admin/statistics', [StatisticsController::class, 'getAdminStats']);
     Route::get('admin/transactions', [StatisticsController::class, 'getAdminTransactions']);
 });

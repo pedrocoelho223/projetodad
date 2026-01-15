@@ -1,5 +1,32 @@
-/node_modules /vendor
+# Dependências (já tens)
+node_modules
+vendor
 
-.git .gitignore .idea .vscode
+# Git / IDE (já tens)
+.git
+.gitignore
+.idea
+.vscode
 
-/storage/.key /storage/framework/cache/ /storage/framework/sessions/* /storage/framework/views/* /public/storage
+# Laravel - runtime gerado (já tens alguns)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+public/storage
+
+# Cache e builds
+bootstrap/cache/*.php
+
+# Testes
+tests
+coverage
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+*.log
+
+# Frontend (se este Dockerfile é SÓ da API)
+frontend
+dist

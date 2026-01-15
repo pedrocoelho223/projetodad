@@ -16,7 +16,7 @@ spec:
       priorityClassName: low-priority
       containers:
         - name: ws
-          image: registry-172.22.21.115.sslip.io/dad-group-5/ws:v2.0.35
+          image: registry-172.22.21.115.sslip.io/dad-group-5/ws:v2.0.89
           ports:
             - containerPort: 3000
           resources:

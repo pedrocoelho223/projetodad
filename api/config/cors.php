@@ -5,7 +5,6 @@ return [
     'allowed_origins' => [
         'http://web-dad-group-5-172.22.21.253.sslip.io', // O teu domínio de produção/k8s
         'http://localhost:5174', // O teu frontend local (Vite)
-        'http://localhost',      // Por precaução
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],

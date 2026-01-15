@@ -56,15 +56,25 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import http from '@/lib/axios'
+import { useAPIStore } from '@/stores/api'
 
+const api = useAPIStore()
 const transactions = ref([])
+const loading = ref(false)
 
 const fetchTransactions = async () => {
-  const res = await http.get('/admin/transactions')
+  loading.value = true
+  try {
+    const res = await api.getAdminTransactions()
 
-  // 👇👇👇 ISTO É O PONTO CRÍTICO 👇👇👇
-  transactions.value = res.data.data
+    // API pode devolver { data: [...] }
+    transactions.value = res.data.data ?? res.data ?? []
+  } catch (error) {
+    console.error('Erro ao carregar transações:', error)
+    transactions.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(fetchTransactions)

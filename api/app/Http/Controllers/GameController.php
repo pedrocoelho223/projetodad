@@ -11,32 +11,30 @@ use Illuminate\Support\Facades\Auth;
 
 class GameController extends Controller
 {
-    // --- MÉTODOS DE API RESOURCE (HISTÓRICO) ---
-
-    // Lista de jogos (Admin/User)
-    public function index(Request $request)
+    /**
+     * Lista geral de jogos (admin / histórico global)
+     */
+    public function index()
     {
-        // Se for para leaderboard (top 5 vitórias, por exemplo)
-        if ($request->path() == 'api/leaderboard/top') {
-             return response()->json(
-                \App\Models\User::orderByDesc('coins_balance')->take(5)->get()
-            );
-        }
-
-        return Game::with(['winner', 'player1'])->orderByDesc('created_at')->paginate(10);
+        return Game::with(['winner', 'player1'])
+            ->orderByDesc('ended_at')
+            ->paginate(10);
     }
 
-    // Iniciar Jogo (Single Player)
+    /**
+     * Iniciar jogo Singleplayer
+     */
     public function start(Request $request)
     {
-        // Cria um ID único para este jogo
-        $gameId = 'game_' . Str::random(10);
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Não autenticado'], 401);
+        }
 
-        // Instancia o motor
+        $gameId = 'game_' . Str::random(12);
+
         $engine = new BiscaEngine();
 
-        // Guarda o estado na Cache por 30 mins
-        Cache::put($gameId, $engine, 1800);
+        Cache::put($gameId, $engine, 1800); // 30 minutos
 
         return response()->json([
             'game_token' => $gameId,
@@ -44,63 +42,72 @@ class GameController extends Controller
         ]);
     }
 
-    // Fazer Jogada
+    /**
+     * Jogada do jogador
+     */
     public function play(Request $request)
     {
         $request->validate([
-            'game_token' => 'required',
+            'game_token' => 'required|string',
             'card_index' => 'required|integer'
         ]);
+
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Não autenticado'], 401);
+        }
 
         $gameId = $request->game_token;
         $engine = Cache::get($gameId);
 
-        if (!$engine) {
-            return response()->json(['message' => 'Jogo expirado ou não encontrado.'], 404);
+        if (!$engine instanceof BiscaEngine) {
+            return response()->json(['message' => 'Jogo expirado ou inválido'], 404);
         }
 
-        // Tenta jogar
         $success = $engine->playerMove($request->card_index);
 
         if (!$success) {
-            return response()->json(['message' => 'Jogada inválida ou não é a tua vez.'], 400);
+            return response()->json(['message' => 'Jogada inválida'], 400);
         }
 
-        // Atualiza Cache
         Cache::put($gameId, $engine, 1800);
 
-        // 4. Se o jogo acabou, gravar na BD
         $state = $engine->getState();
 
+        // Se o jogo terminou, gravar na BD
         if ($state['gameOver']) {
+            $playerWon = $state['scores']['player'] > $state['scores']['bot'];
+
             Game::create([
-                'type' => 'singleplayer',
+                'type' => 'single',
                 'status' => 'ended',
                 'began_at' => now()->subMinutes(5),
                 'ended_at' => now(),
-                'player1_user_id' => Auth::id(), // <--- MUDOU AQUI (Mais seguro)
-                'winner_user_id' => ($state['scores']['player'] > 60) ? Auth::id() : null, // <--- E AQUI
-                'custom' => $state
+                'player1_user_id' => Auth::id(),
+                'winner_user_id' => $playerWon ? Auth::id() : null,
+                'custom' => $state,
             ]);
 
-            // Limpa da cache para não jogar mais
             Cache::forget($gameId);
         }
 
+
         return response()->json([
-            'game_token' => $gameId, // Mantém o token
-            'state' => $engine->getState()
+            'game_token' => $gameId,
+            'state' => $state
         ]);
     }
 
-    //histórico de jogos
-    public function myHistory(Request $request) {
-    return Game::where(function($query) use ($request) {
-        $query->where('player1_id', $request->user()->id)
-              ->orWhere('player2_id', $request->user()->id);
-    })
-    ->where('status', 'E') // Apenas jogos terminados (Ended)
-    ->orderBy('ended_at', 'desc')
-    ->get();
-}
+    /**
+     * Histórico do utilizador autenticado
+     */
+    public function myHistory(Request $request)
+    {
+        return Game::where(function ($query) {
+            $query->where('player1_user_id', Auth::id())
+                ->orWhere('player2_user_id', Auth::id());
+        })
+            ->where('status', 'ended')
+            ->orderByDesc('ended_at')
+            ->get();
+    }
 }

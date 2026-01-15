@@ -8,16 +8,20 @@ class BiscaEngine
     public $playerHand = [];
     public $botHand = [];
     public $trumpCard = null;
-    public $tableCards = []; // ['player' => card, 'bot' => card]
+
+    // Mesa: pode ter 'player' e/ou 'bot'
+    public $tableCards = [];
+
     public $scores = ['player' => 0, 'bot' => 0];
     public $deckOpen = true;
+
+    // 'player' ou 'bot' = quem tem a vez
     public $turn = 'player';
 
     // REGRAS OFICIAIS (40 Cartas)
-    // Valores: Ás=11, 7=10, Rei=4, Valete=3, Dama=2, Resto=0
     const VALUES = [
         'A' => 11, '7' => 10, 'K' => 4, 'J' => 3, 'Q' => 2,
-        '6'=>0, '5'=>0, '4'=>0, '3'=>0, '2'=>0
+        '6' => 0, '5' => 0, '4' => 0, '3' => 0, '2' => 0
     ];
 
     // Hierarquia de força (do mais forte para o mais fraco)
@@ -27,7 +31,9 @@ class BiscaEngine
     public function __construct($deck = null)
     {
         if ($deck) {
-            foreach ($deck as $key => $value) $this->$key = $value;
+            foreach ($deck as $key => $value) {
+                $this->$key = $value;
+            }
         } else {
             $this->initGame();
         }
@@ -35,11 +41,11 @@ class BiscaEngine
 
     private function initGame()
     {
-        // 1. Criar Baralho de 40 cartas
+        // 1) Criar baralho
         foreach (self::SUITS as $suit) {
             foreach (self::RANKS as $rank) {
                 $this->deck[] = [
-                    'code' => $rank.$suit,
+                    'code' => $rank . $suit,
                     'rank' => $rank,
                     'suit' => $suit,
                     'value' => self::VALUES[$rank]
@@ -48,19 +54,24 @@ class BiscaEngine
         }
         shuffle($this->deck);
 
-        // 2. Definir Trunfo (última carta)
+        // 2) Definir trunfo (última carta)
         $this->trumpCard = array_pop($this->deck);
 
-        // 3. Dar cartas (3 para cada - Bisca de 3)
+        // 3) Dar 3 cartas a cada (Bisca 3)
         for ($i = 0; $i < 3; $i++) {
             $this->playerHand[] = array_pop($this->deck);
             $this->botHand[] = array_pop($this->deck);
         }
 
-        // Colocar trunfo no fundo do baralho (virtualmente, na array fica no início para ser o último a sair)
+        // Colocar trunfo no fundo (virtualmente)
         array_unshift($this->deck, $this->trumpCard);
     }
 
+    /**
+     * Jogada do jogador.
+     * - Se o bot já jogou (bot foi primeiro), então esta jogada fecha a ronda e resolve.
+     * - Se o jogador for primeiro, chama o bot para responder e depois resolve.
+     */
     public function playerMove($cardIndex)
     {
         if ($this->turn !== 'player') return false;
@@ -69,130 +80,175 @@ class BiscaEngine
         $card = array_splice($this->playerHand, $cardIndex, 1)[0];
         $this->tableCards['player'] = $card;
 
+        // Se o bot já tinha jogado (bot iniciou a ronda), agora temos as 2 cartas -> resolver
+        if (isset($this->tableCards['bot'])) {
+            $this->resolveTrick();
+            return true;
+        }
+
+        // Caso normal: jogador iniciou -> bot responde
         $this->turn = 'bot';
-        $this->botMove(); // Bot responde logo
+        $this->botMove();
 
         return true;
     }
 
+    /**
+     * Jogada do bot:
+     * - Se existe carta do player na mesa: bot está a responder -> joga e resolve.
+     * - Se não existe carta do player: bot está a iniciar -> joga UMA carta e passa a vez ao player.
+     */
     public function botMove()
     {
-        // Lógica simples do Bot (conforme enunciado)
-        // Se joga em 2º, tenta ganhar. Se não conseguir, joga a mais baixa.
+        if ($this->turn !== 'bot') return false;
+        if (count($this->botHand) === 0) return false;
 
-        $botCardIndex = 0; // Default: primeira carta
-
+        // BOT A RESPONDER (player já jogou)
         if (isset($this->tableCards['player'])) {
-            // Bot é o segundo a jogar
             $opponentCard = $this->tableCards['player'];
-            $bestWinIndex = -1;
-            $lowestCardIndex = 0;
 
-            // Encontrar melhor carta para ganhar ou a mais baixa para perder
-            usort($this->botHand, fn($a, $b) => $a['value'] - $b['value']); // Ordena por valor para facilitar
+            // Ordena mão do bot por "fraqueza" (primeiro as mais fracas)
+            usort($this->botHand, fn($a, $b) => $a['value'] <=> $b['value']);
+
+            $bestWinIndex = -1;
 
             foreach ($this->botHand as $index => $card) {
                 if ($this->beats($card, $opponentCard)) {
-                    // Se esta carta ganha, usa-a (como está ordenado crescente, usa a mais fraca que ganha)
-                    $bestWinIndex = $index;
+                    $bestWinIndex = $index; // a mais fraca que ganha
                     break;
                 }
             }
 
-            // Se encontrou carta para ganhar, usa-a. Senão, usa a mais baixa (index 0 após sort)
             $botCardIndex = ($bestWinIndex !== -1) ? $bestWinIndex : 0;
-        }
-        else {
-            // Bot é o primeiro a jogar: joga a mais baixa (não gasta trunfos)
-            usort($this->botHand, fn($a, $b) => $a['value'] - $b['value']);
-            $botCardIndex = 0;
+
+            $card = array_splice($this->botHand, $botCardIndex, 1)[0];
+            $this->tableCards['bot'] = $card;
+
+            // Agora sim: temos as duas -> resolve
+            $this->resolveTrick();
+            return true;
         }
 
-        // Jogar a carta
-        $card = array_splice($this->botHand, $botCardIndex, 1)[0];
+        // BOT A INICIAR (não há carta do player na mesa)
+        usort($this->botHand, fn($a, $b) => $a['value'] <=> $b['value']);
+        $card = array_splice($this->botHand, 0, 1)[0];
         $this->tableCards['bot'] = $card;
 
-        $this->resolveTrick();
+        // Importante: NÃO resolver aqui (falta a carta do player)
+        $this->turn = 'player';
+        return true;
     }
 
     private function beats($cardA, $cardB)
     {
         $trumpSuit = $this->trumpCard['suit'];
 
-        // 1. Quem joga trunfo contra não-trunfo ganha
+        // Trunfo bate não-trunfo
         if ($cardA['suit'] === $trumpSuit && $cardB['suit'] !== $trumpSuit) return true;
         if ($cardB['suit'] === $trumpSuit && $cardA['suit'] !== $trumpSuit) return false;
 
-        // 2. Naipes iguais: ganha valor maior ou hierarquia
+        // Mesmo naipe: compara valor, depois hierarquia
         if ($cardA['suit'] === $cardB['suit']) {
             if ($cardA['value'] !== $cardB['value']) return $cardA['value'] > $cardB['value'];
-            // Se valores iguais (ex: 6 e 5 valem 0), ver hierarquia no array RANKS
             return array_search($cardA['rank'], self::RANKS) < array_search($cardB['rank'], self::RANKS);
         }
 
-        // 3. Naipes diferentes (sem trunfo): ganha quem jogou primeiro (neste caso CardB estava na mesa)
+        // Naipe diferente sem trunfo: ganha quem jogou primeiro (logo, A só ganha se for trunfo, aqui não é)
         return false;
     }
 
     private function resolveTrick()
     {
+        // Guard: só resolve se existirem as 2 cartas
+        if (!isset($this->tableCards['player'], $this->tableCards['bot'])) {
+            return;
+        }
+
         $pCard = $this->tableCards['player'];
         $bCard = $this->tableCards['bot'];
-        $points = $pCard['value'] + $bCard['value'];
+        $points = ($pCard['value'] ?? 0) + ($bCard['value'] ?? 0);
 
-        // Verifica quem ganha. Nota: Se o bot jogou em 2º, a função beats verifica se Bot ganha a Player.
-        // Se o bot jogou em 1º, Player joga em 2º.
+        // Quem jogou primeiro?
+        $botPlayedFirst = isset($this->tableCards['_bot_first']) ? (bool)$this->tableCards['_bot_first'] : false;
 
-        $botWins = false;
-        if ($this->turn === 'bot') {
-            // Bot jogou em 2º (respondeu)
+        // Melhor: inferir pelo estado antes de limpar:
+        // Se o bot iniciou a ronda, então no momento em que o player jogou, já existia 'bot'.
+        // Como neste resolveTrick já temos os 2, a forma segura é:
+        // Se a vez atual era do bot e ele respondeu, jogador foi primeiro.
+        // Se a vez atual era do player e ele respondeu, bot foi primeiro.
+        // -> mas como aqui a vez pode já ter sido alterada, fazemos isto:
+        // Se a carta do bot estava na mesa antes do player jogar, o playerMove resolve diretamente.
+        // Para não depender disso, fazemos simples:
+        // Se o bot NÃO tinha carta quando o player jogou, então player foi primeiro.
+        // Isto já está garantido pelo fluxo:
+        // - Player inicia: turn muda para bot e botMove responde e resolve.
+        // - Bot inicia: botMove joga 1 carta e muda turn para player; playerMove joga e resolve.
+        // Logo: se chegamos aqui e o turn é 'bot', o bot respondeu (player foi primeiro).
+        // Se o turn é 'player', o player respondeu (bot foi primeiro).
+
+        $playerWasFirst = ($this->turn === 'bot'); // bot respondeu -> player foi primeiro
+
+        if ($playerWasFirst) {
+            // bot jogou em 2º
             $botWins = $this->beats($bCard, $pCard);
         } else {
-            // Bot jogou em 1º, Player respondeu
+            // bot jogou em 1º, player respondeu
             $botWins = !$this->beats($pCard, $bCard);
         }
 
-        if ($botWins) {
-            $this->scores['bot'] += $points;
-            $winner = 'bot';
-        } else {
-            $this->scores['player'] += $points;
-            $winner = 'player';
-        }
+        $winner = $botWins ? 'bot' : 'player';
+        $this->scores[$winner] += $points;
 
-        // Limpar mesa e pescar
+        // Limpar mesa
         $this->tableCards = [];
 
+        // Pescar cartas (se houver baralho)
         if (count($this->deck) > 0) {
-            // Vencedor pesca primeiro
+            // vencedor pesca primeiro
             if ($winner === 'player') {
-                $this->playerHand[] = array_pop($this->deck);
-                $this->botHand[] = array_pop($this->deck);
+                $draw1 = array_pop($this->deck);
+                $draw2 = array_pop($this->deck);
+
+                if ($draw1) $this->playerHand[] = $draw1;
+                if ($draw2) $this->botHand[] = $draw2;
             } else {
-                $this->botHand[] = array_pop($this->deck);
-                $this->playerHand[] = array_pop($this->deck);
+                $draw1 = array_pop($this->deck);
+                $draw2 = array_pop($this->deck);
+
+                if ($draw1) $this->botHand[] = $draw1;
+                if ($draw2) $this->playerHand[] = $draw2;
             }
         } else {
             $this->deckOpen = false;
         }
 
+        // Próximo turno é do vencedor
         $this->turn = $winner;
 
-        // Se o bot ganhou, é a vez dele jogar a próxima carta imediatamente
+        // Se o bot ganhou, ele inicia a próxima ronda automaticamente (joga 1 carta e espera)
         if ($winner === 'bot' && count($this->botHand) > 0) {
             $this->botMove();
         }
     }
 
-    public function getState() {
-        return [
-            'playerHand' => $this->playerHand,
-            'trumpCard' => $this->trumpCard,
-            'deckCount' => count($this->deck), // Contagem visual
-            'table' => $this->tableCards,
-            'scores' => $this->scores,
-            'turn' => $this->turn,
-            'gameOver' => (count($this->playerHand) == 0 && count($this->deck) == 0)
-        ];
-    }
+    public function getState()
+{
+    $gameOver = count($this->playerHand) === 0
+             && count($this->botHand) === 0;
+
+    return [
+        'playerHand' => $this->playerHand,
+        'botHand' => $this->botHand,
+        'trumpCard' => $this->trumpCard,
+        'deckCount' => count($this->deck),
+        'table' => $this->tableCards,
+        'scores' => $this->scores,
+        'turn' => $this->turn,
+        'gameOver' => $gameOver,
+        'winner' => $gameOver
+            ? ($this->scores['player'] > $this->scores['bot'] ? 'player' : 'bot')
+            : null
+    ];
+}
+
 }

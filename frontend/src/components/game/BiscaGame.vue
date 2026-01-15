@@ -89,6 +89,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
@@ -103,7 +104,10 @@ const gameState = ref({
   gameOver: false
 })
 
-const isPlayerTurn = computed(() => gameState.value.turn === 'player')
+const isPlayerTurn = computed(() =>
+  !gameState.value.gameOver && gameState.value.turn === 'player'
+)
+
 const botCardCount = computed(() => {
   if (gameState.value.gameOver) return 0;
   return gameState.value.deckCount > 0 ? 3 : Math.max(0, gameState.value.playerHand.length);
@@ -115,7 +119,7 @@ const finalResultText = computed(() => {
   return '💀 PERDESTE'
 })
 
-const API_URL = 'http://api-dad-group-5-172.22.21.253.sslip.io/api'
+const API_URL = `${import.meta.env.VITE_API_DOMAIN}/api`  //'http://api-dad-group-5-172.22.21.253.sslip.io/api' //'http://localhost:8000/api'
 
 // TRADUTOR DE CARTAS
 const getCardUrl = (card) => {
@@ -146,21 +150,41 @@ const startGame = async () => {
 }
 
 const playCard = async (index) => {
-  if (!isPlayerTurn.value || loading.value) return
+  // 🔒 BLOQUEIOS OBRIGATÓRIOS
+  if (loading.value) return
+  if (gameState.value.gameOver) return
+  if (gameState.value.turn !== 'player') return
+
   loading.value = true
+
   try {
     const response = await fetch(`${API_URL}/games/single/play`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ game_token: gameToken.value, card_index: index })
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authStore.token ? { 'Authorization': `Bearer ${authStore.token}` } : {})
+      },
+      body: JSON.stringify({
+        game_token: gameToken.value,
+        card_index: index
+      })
     })
-    if (response.ok) {
-        const data = await response.json()
-        gameState.value = data.state
+
+    if (!response.ok) {
+      console.error('Jogada rejeitada')
+      return
     }
-  } catch (e) { console.error(e) }
-  finally { loading.value = false }
+
+    const data = await response.json()
+    gameState.value = data.state
+
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
 }
+
 
 const quitGame = () => { if(confirm('Sair?')) router.push('/dashboard') }
 onMounted(() => startGame())

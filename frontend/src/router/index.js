@@ -74,7 +74,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/game/single',
+      path: '/games/single',
       name: 'SinglePlayer',
       component: BiscaGame,
       meta: { requiresAuth: true },
@@ -99,7 +99,7 @@ const router = createRouter({
         path: '/admin/users',
         name: 'AdminUsers',
         component: AdminUsers,
-        meta: { requiresAuth: true } 
+        meta: { requiresAuth: true }
     },
 
     /* =====================
@@ -123,14 +123,14 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   // 1. Verificar Autenticação
-  if (to.meta.requiresAuth && !authStore.user) { // Assumindo que verifica se o user existe
+  if (to.meta.requiresAuth && !authStore.isLoggedIn) { // Assumindo que verifica se o user existe
     next({ name: 'login' })
     return
   }
 
   // 2. Verificar Admin
   // Nota: Usa authStore.user ou authStore.currentUser conforme a tua store
-  if (to.meta.requiresAdmin && authStore.user?.type !== 'A') {
+  if (to.meta.requiresAdmin && authStore.currentUser?.type !== 'A') {
     next({ name: 'home' })
     return
   }

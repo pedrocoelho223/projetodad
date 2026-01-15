@@ -1,21 +1,42 @@
-FROM dunglas/frankenphp
+# =========================
+# STAGE 1 — BUILDER
+# =========================
+FROM composer:2 AS builder
 
+WORKDIR /app
+
+# Copiar apenas o necessário para resolver dependências
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --prefer-dist \
+    --no-interaction \
+    --optimize-autoloader
+
+# Copiar o resto da app
+COPY . .
+
+# =========================
+# STAGE 2 — RUNTIME
+# =========================
+FROM dunglas/frankenphp:php8.3-alpine
+
+# Instalar apenas extensões necessárias (sem build tools)
 RUN install-php-extensions \
     pdo_mysql \
-    gd \
     intl \
     zip \
     opcache
 
-COPY deployment/Caddyfile /etc/frankenphp/Caddyfile
-
-COPY . /app
-
 WORKDIR /app
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copiar APENAS a app final (sem composer, sem cache)
+COPY --from=builder /app /app
 
-RUN composer install 
-
+# Permissões Laravel
 RUN chown -R www-data:www-data /app \
-    && chmod -R 755 /app/storage
+ && chmod -R 755 /app/storage /app/bootstrap/cache
+
+EXPOSE 80

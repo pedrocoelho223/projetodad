@@ -31,7 +31,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import http from '@/lib/axios'
+import { useAPIStore } from '@/stores/api'
+
+// Charts
 import { Line, Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -54,39 +56,44 @@ ChartJS.register(
   Legend
 )
 
+const api = useAPIStore()
 const stats = ref(null)
 
+// ---------- LOAD DATA ----------
 onMounted(async () => {
-  const res = await http.get('/statistics/public')
-  stats.value = res.data
+  try {
+    const res = await api.getPublicStatistics()
+    stats.value = res.data
+  } catch (error) {
+    console.error('Erro ao carregar estatísticas públicas:', error)
+    stats.value = null
+  }
 })
 
+// ---------- CHARTS ----------
 const gamesChart = computed(() => ({
-  labels: stats.value?.games_history.map(g => g.date).reverse(),
-  datasets: [{
-    label: 'Jogos',
-    data: stats.value?.games_history.map(g => g.total).reverse(),
-    borderColor: '#3b82f6',
-    backgroundColor: '#3b82f6'
-  }]
+  labels: stats.value?.games_history?.map(g => g.date).reverse() || [],
+  datasets: [
+    {
+      label: 'Jogos',
+      data: stats.value?.games_history?.map(g => g.total).reverse() || [],
+      borderColor: '#3b82f6',
+      backgroundColor: '#3b82f6'
+    }
+  ]
 }))
 
 const variantsChart = computed(() => ({
-  labels: stats.value?.game_variants.map(v => v.type == '3' ? 'Bisca 3' : 'Bisca 9'),
-  datasets: [{
-    label: 'Total',
-    data: stats.value?.game_variants.map(v => v.total),
-    backgroundColor: ['#10b981', '#f59e0b']
-  }]
+  labels:
+    stats.value?.game_variants?.map(v =>
+      v.type === '3' ? 'Bisca 3' : 'Bisca 9'
+    ) || [],
+  datasets: [
+    {
+      label: 'Total',
+      data: stats.value?.game_variants?.map(v => v.total) || [],
+      backgroundColor: ['#10b981', '#f59e0b']
+    }
+  ]
 }))
 </script>
-
-<style scoped>
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  font-weight: bold;
-  text-align: center;
-}
-</style>

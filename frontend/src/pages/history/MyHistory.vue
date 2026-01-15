@@ -34,7 +34,7 @@
               <th class="px-4 py-3 text-left">Data</th>
               <th class="px-4 py-3 text-left">Variante</th>
               <th class="px-4 py-3 text-left">Resultado</th>
-              <th class="px-4 py-3 text-left text-center">Pontuação</th>
+              <th class="px-4 py-3 text-left">Pontuação</th>
               <th class="px-4 py-3 text-left">Tipo de Vitória</th>
             </tr>
           </thead>
@@ -94,31 +94,37 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import http from '@/lib/axios' // Garante que o caminho para o axios está correto
+import { useAPIStore } from '@/stores/api'
 
 const authStore = useAuthStore()
+const api = useAPIStore()
+
 const games = ref([])
 const loading = ref(true)
 
-const isWinner = (game) => game.winner_user_id === authStore.currentUser.id
+const isWinner = (game) =>
+  game.winner_user_id === authStore.currentUser?.id
 
 const getWinType = (game) => {
   const points =
-    game.player1_user_id === authStore.currentUser.id ? game.player1_points : game.player2_points
+    game.player1_user_id === authStore.currentUser?.id
+      ? game.player1_points
+      : game.player2_points
 
-  // Lógica de pontos para G4: 120 = Bandeira, >= 91 = Capote
   if (points === 120) {
     return {
       label: '🚩 BANDEIRA',
       class: 'bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold',
     }
   }
+
   if (points >= 91) {
     return {
       label: '🧥 CAPOTE',
       class: 'bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold',
     }
   }
+
   return {
     label: 'VITÓRIA',
     class: 'bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold',
@@ -127,14 +133,14 @@ const getWinType = (game) => {
 
 onMounted(async () => {
   try {
-    const response = await http.get('/my/games') // Rota definida no teu api.php
-    games.value = response.data
+    // ✅ USO CORRETO DA STORE
+    const response = await api.getMyGames()
+    games.value = response.data.data ?? response.data
   } catch (error) {
     console.error('Erro ao carregar histórico:', error)
+    games.value = []
   } finally {
     loading.value = false
   }
 })
 </script>
-
-<style scoped></style>
